@@ -59,6 +59,7 @@ void create_screen_main() {
             objects.obj1 = obj;
             lv_obj_set_pos(obj, 434, 178);
             lv_obj_set_size(obj, 102, 62);
+            lv_obj_add_event_cb(obj, action_next_btn, LV_EVENT_CLICKED, (void *)0);
             lv_obj_set_style_bg_color(obj, lv_color_hex(0x181818), LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_radius(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_shadow_opa(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -85,6 +86,7 @@ void create_screen_main() {
             objects.play_pause = obj;
             lv_obj_set_pos(obj, 280, 178);
             lv_obj_set_size(obj, 154, 62);
+            lv_obj_add_event_cb(obj, action_play_pause_btn, LV_EVENT_CLICKED, (void *)0);
             lv_obj_set_style_bg_color(obj, lv_color_hex(0x181818), LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_radius(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_shadow_opa(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -184,6 +186,8 @@ void create_screen_main() {
             lv_obj_set_style_pad_right(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_pad_bottom(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_radius(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
+            lv_obj_add_event_cb(obj, action_gesture, LV_EVENT_GESTURE, (void *)0);
+            lv_obj_clear_flag(obj, LV_OBJ_FLAG_GESTURE_BUBBLE);
             lv_obj_set_style_bg_color(obj, lv_color_hex(0x181818), LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_bg_opa(obj, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_border_color(obj, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);

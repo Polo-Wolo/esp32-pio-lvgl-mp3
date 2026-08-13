@@ -114,7 +114,44 @@
     "structures": [],
     "enums": []
   },
-  "actions": [],
+  "actions": [
+    {
+      "objID": "c2d8a85c-0814-4419-a238-2df239828352",
+      "components": [],
+      "connectionLines": [],
+      "localVariables": [],
+      "componentGroups": [],
+      "userProperties": [],
+      "name": "next_btn"
+    },
+    {
+      "objID": "a70c2b39-b6e0-4466-b561-6d9762ec5c14",
+      "components": [],
+      "connectionLines": [],
+      "localVariables": [],
+      "componentGroups": [],
+      "userProperties": [],
+      "name": "play_pause_btn"
+    },
+    {
+      "objID": "8bd80370-c07d-4b5c-ef23-d893836c83f8",
+      "components": [],
+      "connectionLines": [],
+      "localVariables": [],
+      "componentGroups": [],
+      "userProperties": [],
+      "name": "like_btn"
+    },
+    {
+      "objID": "79498d37-6db0-430e-8373-044a7c13f6e0",
+      "components": [],
+      "connectionLines": [],
+      "localVariables": [],
+      "componentGroups": [],
+      "userProperties": [],
+      "name": "gesture"
+    }
+  ],
   "userPages": [
     {
       "objID": "4b40eba7-b31a-468a-b887-11dfd0b6637f",
@@ -264,7 +301,15 @@
                 "childStyles": []
               },
               "timeline": [],
-              "eventHandlers": [],
+              "eventHandlers": [
+                {
+                  "objID": "bce4fe2c-3807-424d-ddb8-4470c2ada9c1",
+                  "eventName": "CLICKED",
+                  "handlerType": "action",
+                  "action": "next_btn",
+                  "userData": 0
+                }
+              ],
               "leftUnit": "px",
               "topUnit": "px",
               "widthUnit": "px",
@@ -371,7 +416,15 @@
                 "childStyles": []
               },
               "timeline": [],
-              "eventHandlers": [],
+              "eventHandlers": [
+                {
+                  "objID": "c15df961-7c00-4c52-e48b-1bc14d3221e1",
+                  "eventName": "CLICKED",
+                  "handlerType": "action",
+                  "action": "play_pause_btn",
+                  "userData": 0
+                }
+              ],
               "identifier": "PlayPause",
               "leftUnit": "px",
               "topUnit": "px",
@@ -754,7 +807,15 @@
                 "childStyles": []
               },
               "timeline": [],
-              "eventHandlers": [],
+              "eventHandlers": [
+                {
+                  "objID": "ae0b0f2a-f116-4ee7-a2d1-65af9c90cf70",
+                  "eventName": "GESTURE",
+                  "handlerType": "action",
+                  "action": "gesture",
+                  "userData": 0
+                }
+              ],
               "leftUnit": "px",
               "topUnit": "px",
               "widthUnit": "px",
@@ -1020,7 +1081,7 @@
                   "useStaticText": true
                 }
               ],
-              "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLLABLE|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE",
+              "widgetFlags": "CLICK_FOCUSABLE|PRESS_LOCK|SCROLLABLE|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE",
               "hiddenFlagType": "literal",
               "clickableFlag": true,
               "clickableFlagType": "literal",

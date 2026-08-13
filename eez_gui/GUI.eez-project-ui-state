@@ -1,7 +1,9 @@
 {
   "navigation": {
     "selectedUserPageObject": "[GUI.eez-project]:/userPages/0",
-    "subnavigationSelectedItems": {}
+    "subnavigationSelectedItems": {
+      "variables-tab/sub-navigation/selected-item": "Global"
+    }
   },
   "layoutModel": {
     "rootEditor": {
@@ -68,6 +70,7 @@
           },
           {
             "type": "border",
+            "selected": 1,
             "location": "bottom",
             "children": [
               {
@@ -1052,15 +1055,18 @@
       "selectionFront": {},
       "selectionBack": {
         "0": {
-          "2": {}
+          "0": {},
+          "2": {},
+          "4": {},
+          "6": {}
         }
       },
       "transform": {
         "translate": {
-          "x": -268,
-          "y": -120
+          "x": -203.35227272727286,
+          "y": -179.71363182176196
         },
-        "scale": 1
+        "scale": 0.9
       },
       "timeline": {
         "isEditorActive": false,
@@ -1083,13 +1089,13 @@
   "logsPanelFilter": "all",
   "selectedStylePropertyName": "",
   "lvglPart": "MAIN",
-  "lvglState": "DEFAULT",
+  "lvglState": "CHECKED",
   "lvglExpandedPropertiesGroup": [
     "BORDER",
     "BACKGROUND"
   ],
   "showInactiveFlowsInDebugger": true,
   "globalFlowZoom": true,
-  "flowZoom": 1,
+  "flowZoom": 0.9,
   "implementationLanguage": "C"
 }
