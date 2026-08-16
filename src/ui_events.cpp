@@ -1,9 +1,13 @@
 #include <Arduino.h>
 #include "ui_events.h"
+#include "Audio.h"
+
+extern Audio audio;
 
 void action_play_pause_btn(lv_event_t *e)
 {
-    Serial.println("PLAY / PAUSE");
+    audio.pauseResume();
+    Serial.println(audio.isRunning() ? "[Lecture]" : "[Pause]");
 }
 
 void action_next_btn(lv_event_t *e)

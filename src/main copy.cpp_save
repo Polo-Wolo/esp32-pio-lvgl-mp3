@@ -1,0 +1,789 @@
+#include <Arduino.h>
+#include <SD_MMC.h>
+#include <Audio.h>
+#include <vector>
+#include <algorithm>
+
+// ---------------------------------------------------------------------------
+// Pins I2S (4/10/11 sont libres sur cette carte, 33-37 reserves au PSRAM)
+#define I2S_BCLK 4
+#define I2S_LRC 10
+#define I2S_DOUT 11
+
+// Pins carte SD (SDMMC 1-bit) de l'ESP32-S3-Touch-AMOLED-1.91
+#define SD_CLK 9
+#define SD_CMD 42
+#define SD_D0 8
+
+#define PLAYLIST_DIR "/playlists"
+
+Audio audio;
+
+// ---------------------------------------------------------------------------
+// Etats de l'interface
+enum Mode
+{
+  MODE_BROWSER,
+  MODE_PLAYLIST_LIST,
+  MODE_PLAYLIST_EDIT,
+  MODE_TEXT_INPUT
+};
+Mode mode = MODE_BROWSER;
+
+// ---------------------------------------------------------------------------
+// Navigateur de fichiers (dossiers / mp3 sur la carte SD)
+struct Entry
+{
+  String name;
+  bool isDir;
+};
+
+String currentPath = "/";
+std::vector<Entry> entries;
+int selectedIndex = 0;
+std::vector<int> audioIndices; // indices (dans "entries") des mp3 du dossier courant
+
+bool isMp3(const String &name)
+{
+  String n = name;
+  n.toLowerCase();
+  return n.endsWith(".mp3");
+}
+
+String basename(const String &path)
+{
+  int sl = path.lastIndexOf('/');
+  return sl >= 0 ? path.substring(sl + 1) : path;
+}
+
+void loadDir()
+{
+  entries.clear();
+  audioIndices.clear();
+
+  File dir = SD_MMC.open(currentPath);
+  if (!dir || !dir.isDirectory())
+  {
+    Serial.printf("Impossible d'ouvrir %s\n", currentPath.c_str());
+    return;
+  }
+
+  File f = dir.openNextFile();
+  while (f)
+  {
+    String name = basename(f.name());
+    if (name.length() && name != "." && name != "..")
+    {
+      bool dir_flag = f.isDirectory();
+      if (dir_flag || isMp3(name))
+        entries.push_back({name, dir_flag});
+    }
+    f = dir.openNextFile();
+  }
+  dir.close();
+
+  std::sort(entries.begin(), entries.end(), [](const Entry &a, const Entry &b)
+            {
+        if (a.isDir != b.isDir) return a.isDir > b.isDir;
+        return a.name.compareTo(b.name) < 0; });
+
+  for (size_t i = 0; i < entries.size(); i++)
+    if (!entries[i].isDir)
+      audioIndices.push_back(i);
+
+  selectedIndex = 0;
+}
+
+String fullPath(int idxInEntries)
+{
+  String p = currentPath;
+  if (!p.endsWith("/"))
+    p += "/";
+  p += entries[idxInEntries].name;
+  return p;
+}
+
+// ---------------------------------------------------------------------------
+// File de lecture generique (alimentee soit par le navigateur, soit par une playlist)
+std::vector<String> playQueue;
+int queuePos = -1;
+
+String currentTitle = "";
+String currentArtist = "";
+String currentAlbum = "";
+
+void playPathAt(int idx)
+{
+  if (idx < 0 || idx >= (int)playQueue.size())
+    return;
+  queuePos = idx;
+  String path = playQueue[idx];
+  currentTitle = basename(path);
+  currentArtist = "";
+  currentAlbum = "";
+  Serial.printf("\n<<<<<<<<<<<<<<<<<<<<<<<<<<<<<>>> Lecture : %s\n", path.c_str());
+  audio.connecttoFS(SD_MMC, path.c_str());
+}
+
+void refreshScreen(); // forward decl
+
+void nextTrack()
+{
+  if (playQueue.empty())
+    return;
+  playPathAt((queuePos + 1) % playQueue.size());
+  refreshScreen();
+}
+
+void prevTrack()
+{
+  if (playQueue.empty())
+    return;
+  playPathAt((queuePos - 1 + playQueue.size()) % playQueue.size());
+  refreshScreen();
+}
+
+// ---------------------------------------------------------------------------
+// Playlists (.m3u : un chemin absolu de mp3 par ligne, stockees dans /playlists)
+std::vector<String> playlistPaths; // playlists disponibles (chemins complets)
+int plSelected = 0;
+
+String activePlaylistPath = "";  // playlist "active" pour l'ajout via 'a'
+String currentPlaylistPath = ""; // playlist actuellement ouverte en edition
+std::vector<String> plTracks;
+int plTrackSelected = 0;
+
+String sanitizeName(String name)
+{
+  name.trim();
+  String out;
+  for (size_t i = 0; i < name.length(); i++)
+  {
+    char c = name[i];
+    if (isalnum((unsigned char)c) || c == '-' || c == '_' || c == ' ')
+      out += c;
+    else
+      out += '_';
+  }
+  out.trim();
+  if (out.length() == 0)
+    out = "playlist";
+  return out;
+}
+
+void loadPlaylistList()
+{
+  if (!SD_MMC.exists(PLAYLIST_DIR))
+    SD_MMC.mkdir(PLAYLIST_DIR);
+  playlistPaths.clear();
+
+  File dir = SD_MMC.open(PLAYLIST_DIR);
+  if (dir && dir.isDirectory())
+  {
+    File f = dir.openNextFile();
+    while (f)
+    {
+      String n = basename(f.name());
+      String nl = n;
+      nl.toLowerCase();
+      if (nl.endsWith(".m3u"))
+        playlistPaths.push_back(String(PLAYLIST_DIR) + "/" + n);
+      f = dir.openNextFile();
+    }
+    dir.close();
+  }
+  std::sort(playlistPaths.begin(), playlistPaths.end());
+  plSelected = 0;
+}
+
+std::vector<String> loadPlaylistTracks(const String &path)
+{
+  std::vector<String> tracks;
+  File f = SD_MMC.open(path, FILE_READ);
+  if (!f)
+    return tracks;
+  while (f.available())
+  {
+    String line = f.readStringUntil('\n');
+    line.trim();
+    if (line.length())
+      tracks.push_back(line);
+  }
+  f.close();
+  return tracks;
+}
+
+void savePlaylistTracks(const String &path, const std::vector<String> &tracks)
+{
+  SD_MMC.remove(path);
+  File f = SD_MMC.open(path, FILE_WRITE);
+  if (!f)
+  {
+    Serial.println("Erreur d'ecriture de la playlist");
+    return;
+  }
+  for (auto &t : tracks)
+    f.println(t);
+  f.close();
+}
+
+String createPlaylist(const String &rawName)
+{
+  String name = sanitizeName(rawName);
+  String path = String(PLAYLIST_DIR) + "/" + name + ".m3u";
+  if (SD_MMC.exists(path))
+  {
+    Serial.println("Une playlist avec ce nom existe deja.");
+    return "";
+  }
+  File f = SD_MMC.open(path, FILE_WRITE);
+  if (!f)
+  {
+    Serial.println("Erreur creation playlist.");
+    return "";
+  }
+  f.close();
+  Serial.printf("Playlist creee : %s\n", name.c_str());
+  return path;
+}
+
+void deletePlaylist(const String &path)
+{
+  SD_MMC.remove(path);
+  if (activePlaylistPath == path)
+    activePlaylistPath = "";
+  Serial.printf("Playlist supprimee : %s\n", basename(path).c_str());
+}
+
+void addTrackToActivePlaylist(const String &trackPath)
+{
+  if (activePlaylistPath == "")
+  {
+    Serial.println("Aucune playlist active. Ouvrez-en une avec 'm' puis Entree.");
+    return;
+  }
+  File f = SD_MMC.open(activePlaylistPath, FILE_APPEND);
+  if (!f)
+  {
+    Serial.println("Erreur ajout a la playlist.");
+    return;
+  }
+  f.println(trackPath);
+  f.close();
+  Serial.printf("Ajoute a %s : %s\n", basename(activePlaylistPath).c_str(), basename(trackPath).c_str());
+  // si la playlist active est celle actuellement ouverte en edition, on rafraichit son contenu
+  if (currentPlaylistPath == activePlaylistPath)
+    plTracks = loadPlaylistTracks(currentPlaylistPath);
+}
+
+// ---------------------------------------------------------------------------
+// Affichage
+
+void printBrowser()
+{
+  Serial.println();
+  Serial.printf("== Navigateur : %s ==\n", currentPath.c_str());
+  Serial.printf("Playlist active : %s\n",
+                activePlaylistPath == "" ? "(aucune)" : basename(activePlaylistPath).c_str());
+  if (entries.empty())
+    Serial.println("(dossier vide)");
+  for (size_t i = 0; i < entries.size(); i++)
+  {
+    const char *cursor = ((int)i == selectedIndex) ? "> " : "  ";
+    const char *icon = entries[i].isDir ? "[DIR] " : "      ";
+    Serial.printf("%s%s%s\n", cursor, icon, entries[i].name.c_str());
+  }
+  Serial.println("Fleches: naviguer | -> /Entree: ouvrir/jouer | <-: dossier parent");
+  Serial.println("Espace: pause | n/p: piste +/- | +/-: volume | a: ajouter a la playlist active | m: playlists");
+}
+
+void printPlaylistList()
+{
+  Serial.println();
+  Serial.println("== Playlists ==");
+  if (playlistPaths.empty())
+    Serial.println("(aucune playlist, appuyez sur 'c' pour en creer une)");
+  for (size_t i = 0; i < playlistPaths.size(); i++)
+  {
+    const char *cursor = ((int)i == plSelected) ? "> " : "  ";
+    const char *active = (playlistPaths[i] == activePlaylistPath) ? " *active*" : "";
+    Serial.printf("%s%s%s\n", cursor, basename(playlistPaths[i]).c_str(), active);
+  }
+  Serial.println("Fleches: naviguer | ->/Entree: ouvrir | c: creer | d: supprimer | a: activer/desactiver | <-: retour navigateur");
+}
+
+void printPlaylistEdit()
+{
+  Serial.println();
+  Serial.printf("== Playlist : %s ==\n", basename(currentPlaylistPath).c_str());
+  if (plTracks.empty())
+    Serial.println("(playlist vide - ajoutez des pistes depuis le navigateur avec 'a')");
+  for (size_t i = 0; i < plTracks.size(); i++)
+  {
+    const char *cursor = ((int)i == plTrackSelected) ? "> " : "  ";
+    Serial.printf("%s%s\n", cursor, basename(plTracks[i]).c_str());
+  }
+  Serial.println("Fleches: naviguer | ->/Entree: jouer | d: retirer la piste | <-: retour liste des playlists");
+}
+
+void refreshScreen()
+{
+  switch (mode)
+  {
+  case MODE_BROWSER:
+    printBrowser();
+    break;
+  case MODE_PLAYLIST_LIST:
+    printPlaylistList();
+    break;
+  case MODE_PLAYLIST_EDIT:
+    printPlaylistEdit();
+    break;
+  default:
+    break;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Actions navigateur
+
+void buildQueueFromFolderAndPlay(int idxInEntries)
+{
+  playQueue.clear();
+  int startPos = -1;
+  for (size_t i = 0; i < audioIndices.size(); i++)
+  {
+    playQueue.push_back(fullPath(audioIndices[i]));
+    if (audioIndices[i] == idxInEntries)
+      startPos = i;
+  }
+  if (startPos < 0)
+    return;
+  playPathAt(startPos);
+}
+
+void enterOrPlaySelected()
+{
+  if (entries.empty())
+    return;
+  if (entries[selectedIndex].isDir)
+  {
+    currentPath = fullPath(selectedIndex);
+    loadDir();
+  }
+  else
+  {
+    buildQueueFromFolderAndPlay(selectedIndex);
+  }
+  refreshScreen();
+}
+
+void goToParent()
+{
+  if (currentPath == "/")
+    return;
+  String p = currentPath;
+  if (p.endsWith("/"))
+    p.remove(p.length() - 1);
+  int slash = p.lastIndexOf('/');
+  currentPath = (slash <= 0) ? "/" : p.substring(0, slash);
+  loadDir();
+  refreshScreen();
+}
+
+// ---------------------------------------------------------------------------
+// Actions playlists
+
+void openSelectedPlaylist()
+{
+  if (playlistPaths.empty())
+    return;
+  currentPlaylistPath = playlistPaths[plSelected];
+  plTracks = loadPlaylistTracks(currentPlaylistPath);
+  plTrackSelected = 0;
+  activePlaylistPath = currentPlaylistPath; // devient la playlist active pour 'a'
+  mode = MODE_PLAYLIST_EDIT;
+  refreshScreen();
+}
+
+void playSelectedPlaylistTrack()
+{
+  if (plTracks.empty())
+    return;
+  playQueue = plTracks;
+  playPathAt(plTrackSelected);
+  refreshScreen();
+}
+
+void removeSelectedPlaylistTrack()
+{
+  if (plTracks.empty())
+    return;
+  plTracks.erase(plTracks.begin() + plTrackSelected);
+  savePlaylistTracks(currentPlaylistPath, plTracks);
+  if (plTrackSelected >= (int)plTracks.size())
+    plTrackSelected = max(0, (int)plTracks.size() - 1);
+  refreshScreen();
+}
+
+void deleteSelectedPlaylist()
+{
+  if (playlistPaths.empty())
+    return;
+  deletePlaylist(playlistPaths[plSelected]);
+  loadPlaylistList();
+  refreshScreen();
+}
+
+void toggleActiveSelectedPlaylist()
+{
+  if (playlistPaths.empty())
+    return;
+  const String &p = playlistPaths[plSelected];
+  if (activePlaylistPath == p)
+  {
+    activePlaylistPath = "";
+    Serial.println("Playlist desactivee (plus d'ajout automatique).");
+  }
+  else
+  {
+    activePlaylistPath = p;
+    Serial.printf("Playlist active : %s\n", basename(p).c_str());
+  }
+  refreshScreen();
+}
+
+// ---------------------------------------------------------------------------
+// Saisie texte (nom de nouvelle playlist)
+String inputBuffer = "";
+
+void startCreatePlaylistPrompt()
+{
+  mode = MODE_TEXT_INPUT;
+  inputBuffer = "";
+  Serial.print("\nNom de la nouvelle playlist (Entree pour valider, Echap pour annuler) : ");
+}
+
+void handleTextInputChar(char c)
+{
+  if (c == '\r' || c == '\n')
+  {
+    Serial.println();
+    String path = createPlaylist(inputBuffer);
+    inputBuffer = "";
+    if (path != "")
+    {
+      currentPlaylistPath = path;
+      plTracks.clear();
+      plTrackSelected = 0;
+      activePlaylistPath = path;
+      mode = MODE_PLAYLIST_EDIT;
+    }
+    else
+    {
+      mode = MODE_PLAYLIST_LIST;
+    }
+    loadPlaylistList();
+    refreshScreen();
+  }
+  else if (c == 0x08 || c == 0x7F)
+  { // backspace
+    if (inputBuffer.length() > 0)
+    {
+      inputBuffer.remove(inputBuffer.length() - 1);
+      Serial.print("\b \b");
+    }
+  }
+  else if (c == 0x1B)
+  { // echap -> annuler
+    inputBuffer = "";
+    mode = MODE_PLAYLIST_LIST;
+    loadPlaylistList();
+    refreshScreen();
+  }
+  else if (c >= 32 && c < 127)
+  {
+    inputBuffer += c;
+    Serial.write(c);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Formatage temps mm:ss
+String fmtTime(uint32_t s)
+{
+  char buf[8];
+  sprintf(buf, "%02u:%02u", s / 60, s % 60);
+  return String(buf);
+}
+
+// ---------------------------------------------------------------------------
+// Callback infos audio (ID3, fin de piste, etc.)
+void onAudioInfo(Audio::msg_t m)
+{
+  if (!m.msg)
+    return;
+  String txt = m.msg;
+
+  switch (m.e)
+  {
+  case Audio::evt_id3data:
+    if (txt.startsWith("Title: "))
+      currentTitle = txt.substring(7);
+    if (txt.startsWith("Artist: "))
+      currentArtist = txt.substring(8);
+    if (txt.startsWith("Album: "))
+      currentAlbum = txt.substring(7);
+    Serial.printf("[ID3] %s\n", txt.c_str());
+    break;
+
+  case Audio::evt_eof:
+    Serial.println("[EOF] Fin de piste -> suivante");
+    nextTrack();
+    break;
+
+  case Audio::evt_info:
+  case Audio::evt_bitrate:
+    Serial.printf("[INFO] %s\n", txt.c_str());
+    break;
+
+  default:
+    break;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Clavier : touches simples + fleches (sequences ANSI ESC [ A/B/C/D)
+
+void handleKey(char c)
+{
+  // Actions communes a tous les modes
+  switch (c)
+  {
+  case ' ':
+    audio.pauseResume();
+    Serial.println(audio.isRunning() ? "[Lecture]" : "[Pause]");
+    return;
+  case 'n':
+  case 'N':
+    nextTrack();
+    return;
+  case 'p':
+  case 'P':
+    prevTrack();
+    return;
+  case '+':
+  case '=':
+  {
+    uint8_t v = audio.getVolume();
+    if (v < 21)
+      audio.setVolume(v + 1);
+    Serial.printf("[Volume] %d/21\n", audio.getVolume());
+    return;
+  }
+  case '-':
+  case '_':
+  {
+    uint8_t v = audio.getVolume();
+    if (v > 0)
+      audio.setVolume(v - 1);
+    Serial.printf("[Volume] %d/21\n", audio.getVolume());
+    return;
+  }
+  case 'm':
+  case 'M':
+    loadPlaylistList();
+    mode = MODE_PLAYLIST_LIST;
+    refreshScreen();
+    return;
+  }
+
+  // Actions dependant du mode
+  switch (mode)
+  {
+  case MODE_BROWSER:
+    if (c == '\r' || c == '\n')
+      enterOrPlaySelected();
+    else if (c == 'a' || c == 'A')
+    {
+      if (!entries.empty() && !entries[selectedIndex].isDir)
+        addTrackToActivePlaylist(fullPath(selectedIndex));
+    }
+    break;
+
+  case MODE_PLAYLIST_LIST:
+    if (c == '\r' || c == '\n')
+      openSelectedPlaylist();
+    else if (c == 'c' || c == 'C')
+      startCreatePlaylistPrompt();
+    else if (c == 'd' || c == 'D')
+      deleteSelectedPlaylist();
+    else if (c == 'a' || c == 'A')
+      toggleActiveSelectedPlaylist();
+    break;
+
+  case MODE_PLAYLIST_EDIT:
+    if (c == '\r' || c == '\n')
+      playSelectedPlaylistTrack();
+    else if (c == 'd' || c == 'D')
+      removeSelectedPlaylistTrack();
+    break;
+
+  default:
+    break;
+  }
+}
+
+void handleArrow(char dir)
+{
+  switch (mode)
+  {
+  case MODE_BROWSER:
+    if (dir == 'A' && selectedIndex > 0)
+      selectedIndex--;
+    else if (dir == 'B' && selectedIndex < (int)entries.size() - 1)
+      selectedIndex++;
+    else if (dir == 'C')
+      enterOrPlaySelected();
+    else if (dir == 'D')
+    {
+      goToParent();
+      return;
+    }
+    refreshScreen();
+    break;
+
+  case MODE_PLAYLIST_LIST:
+    if (dir == 'A' && plSelected > 0)
+      plSelected--;
+    else if (dir == 'B' && plSelected < (int)playlistPaths.size() - 1)
+      plSelected++;
+    else if (dir == 'C')
+    {
+      openSelectedPlaylist();
+      return;
+    }
+    else if (dir == 'D')
+    {
+      mode = MODE_BROWSER;
+      refreshScreen();
+      return;
+    }
+    refreshScreen();
+    break;
+
+  case MODE_PLAYLIST_EDIT:
+    if (dir == 'A' && plTrackSelected > 0)
+      plTrackSelected--;
+    else if (dir == 'B' && plTrackSelected < (int)plTracks.size() - 1)
+      plTrackSelected++;
+    else if (dir == 'C')
+    {
+      playSelectedPlaylistTrack();
+      return;
+    }
+    else if (dir == 'D')
+    {
+      mode = MODE_PLAYLIST_LIST;
+      loadPlaylistList();
+      refreshScreen();
+      return;
+    }
+    refreshScreen();
+    break;
+
+  default:
+    break;
+  }
+}
+
+enum EscState
+{
+  ESC_IDLE,
+  ESC_GOT_ESC,
+  ESC_GOT_BRACKET
+};
+EscState escState = ESC_IDLE;
+
+void readSerialInput()
+{
+  while (Serial.available())
+  {
+    char c = Serial.read();
+
+    if (mode == MODE_TEXT_INPUT)
+    {
+      handleTextInputChar(c);
+      continue;
+    }
+
+    switch (escState)
+    {
+    case ESC_IDLE:
+      if (c == 0x1B)
+        escState = ESC_GOT_ESC;
+      else
+        handleKey(c);
+      break;
+    case ESC_GOT_ESC:
+      if (c == '[')
+        escState = ESC_GOT_BRACKET;
+      else
+      {
+        escState = ESC_IDLE;
+        handleKey(c);
+      }
+      break;
+    case ESC_GOT_BRACKET:
+      handleArrow(c);
+      escState = ESC_IDLE;
+      break;
+    }
+  }
+}
+
+// ---------------------------------------------------------------------------
+void setup()
+{
+  Serial.begin(115200);
+  delay(300);
+
+  SD_MMC.setPins(SD_CLK, SD_CMD, SD_D0);
+  if (!SD_MMC.begin("/sdcard", true))
+  { // true = mode 1-bit (seul D0 est cable)
+    Serial.println("Echec montage carte SD !");
+    return;
+  }
+  Serial.println("Carte SD montee.");
+
+  if (!SD_MMC.exists(PLAYLIST_DIR))
+    SD_MMC.mkdir(PLAYLIST_DIR);
+
+  audio.setPinout(I2S_BCLK, I2S_LRC, I2S_DOUT);
+  audio.setVolume(12); // 0..21
+  Audio::audio_info_callback = onAudioInfo;
+
+  loadDir();
+  refreshScreen();
+}
+
+void loop()
+{
+  audio.loop();
+  readSerialInput();
+
+  static uint32_t lastPrint = 0;
+  if (audio.isRunning() && millis() - lastPrint > 1000)
+  {
+    lastPrint = millis();
+    uint32_t cur = audio.getAudioCurrentTime();
+    uint32_t dur = audio.getAudioFileDuration();
+    Serial.printf("\r[%s / %s] %s - %s (%s)          ",
+                  fmtTime(cur).c_str(), fmtTime(dur).c_str(),
+                  currentArtist.length() ? currentArtist.c_str() : "?",
+                  currentTitle.c_str(),
+                  currentAlbum.length() ? currentAlbum.c_str() : "?");
+  }
+
+  vTaskDelay(1);
+}
