@@ -1,60 +1,88 @@
 #include <Arduino.h>
 
-#include "playback/MusicTrack.h"
-#include "playback/PlaybackQueue.h"
+#include "playback/playback_manager.h"
 
-PlaybackQueue queue;
+PlaybackManager playback;
 
 void setup()
 {
 	Serial.begin(115200);
+
 	delay(1000);
 
 	Serial.println();
-	Serial.println("===== PLAYBACK QUEUE TEST =====");
+	Serial.println("===== PLAYBACK TEST =====");
 
 	MusicTrack track1(
-		"/music/Daft Punk/01.mp3",
-		"Give Life Back to Music",
+		"/Music/Daft Punk/Discovery/01.mp3",
+		"One More Time",
 		"Daft Punk",
-		"Random Access Memories",
+		"Discovery",
 		1);
 
 	MusicTrack track2(
-		"/music/Daft Punk/02.mp3",
-		"Game of Love",
+		"/Music/Daft Punk/Discovery/02.mp3",
+		"Aerodynamic",
 		"Daft Punk",
-		"Random Access Memories",
+		"Discovery",
 		2);
 
 	MusicTrack track3(
-		"/music/Daft Punk/03.mp3",
-		"Giorgio by Moroder",
+		"/Music/Daft Punk/Discovery/03.mp3",
+		"Digital Love",
 		"Daft Punk",
-		"Random Access Memories",
+		"Discovery",
 		3);
 
-	queue.add(track1);
-	queue.add(track2);
-	queue.add(track3);
+	playback.add(track1);
+	playback.add(track2);
+	playback.add(track3);
 
-	Serial.printf("Queue size: %u\n", queue.size());
+	Serial.println("Initial current:");
 
-	for (size_t i = 0; i < queue.size(); i++)
+	const MusicTrack *track = playback.current();
+
+	if (track)
 	{
-		const MusicTrack *track = queue.get(i);
-
-		if (track)
-		{
-			Serial.printf(
-				"%u - %s - %s\n",
-				track->trackNumber,
-				track->artist.c_str(),
-				track->title.c_str());
-		}
+		track->print();
 	}
 
-	Serial.println("===== TEST COMPLETE =====");
+	Serial.println();
+	Serial.println("Selecting index 2...");
+
+	if (playback.setCurrent(2))
+	{
+		Serial.println("Selection successful.");
+	}
+	else
+	{
+		Serial.println("Selection failed.");
+	}
+
+	Serial.println();
+	Serial.println("Current:");
+
+	track = playback.current();
+
+	if (track)
+	{
+		track->print();
+	}
+
+	Serial.println();
+	Serial.println("Selecting invalid index 10...");
+
+	if (playback.setCurrent(10))
+	{
+		Serial.println("Selection successful.");
+	}
+	else
+	{
+		Serial.println("Selection failed.");
+	}
+
+	Serial.println();
+	playback.printQueue();
 }
 
 void loop()

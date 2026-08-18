@@ -14,10 +14,10 @@ struct MusicTrack
     MusicTrack() = default;
 
     MusicTrack(
-        const String& path,
-        const String& title,
-        const String& artist,
-        const String& album,
+        const String &path,
+        const String &title,
+        const String &artist,
+        const String &album,
         uint16_t trackNumber = 0)
         : path(path),
           title(title),
@@ -27,9 +27,16 @@ struct MusicTrack
     {
     }
 
-    bool isValid() const
+    bool isValid() const { return !path.isEmpty(); }
+    void print() const
     {
-        return !path.isEmpty();
+        Serial.printf(
+            "MusicTrack: %s - %s - %s - %s - %d\n",
+            path.c_str(),
+            title.c_str(),
+            artist.c_str(),
+            album.c_str(),
+            trackNumber);
     }
 };
 
