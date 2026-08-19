@@ -1,6 +1,6 @@
-#include "playback_manager.h"
+#include "jukebox.h"
 
-PlaybackManager::PlaybackManager()
+Jukebox::Jukebox()
     : _queueSize(0),
       _currentIndex(-1)
 {
@@ -10,7 +10,7 @@ PlaybackManager::PlaybackManager()
 // QUEUE
 // ==================================================
 
-bool PlaybackManager::add(const MusicTrack &track)
+bool Jukebox::add(const Music &track)
 {
     if (_queueSize >= MAX_QUEUE_SIZE)
     {
@@ -35,18 +35,18 @@ bool PlaybackManager::add(const MusicTrack &track)
     return true;
 }
 
-void PlaybackManager::clear()
+void Jukebox::clear()
 {
     _queueSize = 0;
     _currentIndex = -1;
 }
 
-size_t PlaybackManager::size() const
+size_t Jukebox::size() const
 {
     return _queueSize;
 }
 
-bool PlaybackManager::empty() const
+bool Jukebox::empty() const
 {
     return _queueSize == 0;
 }
@@ -55,7 +55,7 @@ bool PlaybackManager::empty() const
 // CURRENT
 // ==================================================
 
-const MusicTrack *PlaybackManager::current() const
+const Music *Jukebox::current() const
 {
     if (_currentIndex < 0)
     {
@@ -74,7 +74,7 @@ const MusicTrack *PlaybackManager::current() const
 // NEXT
 // ==================================================
 
-const MusicTrack *PlaybackManager::next()
+const Music *Jukebox::next()
 {
     if (_queueSize == 0)
     {
@@ -95,7 +95,7 @@ const MusicTrack *PlaybackManager::next()
 // PREVIOUS
 // ==================================================
 
-const MusicTrack *PlaybackManager::previous()
+const Music *Jukebox::previous()
 {
     if (_queueSize == 0)
     {
@@ -116,7 +116,7 @@ const MusicTrack *PlaybackManager::previous()
 // HAS NEXT / PREVIOUS
 // ==================================================
 
-bool PlaybackManager::hasNext() const
+bool Jukebox::hasNext() const
 {
     if (_queueSize == 0)
     {
@@ -126,7 +126,7 @@ bool PlaybackManager::hasNext() const
     return _currentIndex + 1 < static_cast<int>(_queueSize);
 }
 
-bool PlaybackManager::hasPrevious() const
+bool Jukebox::hasPrevious() const
 {
     if (_queueSize == 0)
     {
@@ -140,12 +140,12 @@ bool PlaybackManager::hasPrevious() const
 // POSITION
 // ==================================================
 
-int PlaybackManager::currentIndex() const
+int Jukebox::currentIndex() const
 {
     return _currentIndex;
 }
 
-bool PlaybackManager::setCurrent(size_t index)
+bool Jukebox::setCurrent(size_t index)
 {
     if (index >= _queueSize)
     {
@@ -158,10 +158,32 @@ bool PlaybackManager::setCurrent(size_t index)
 }
 
 // ==================================================
+// TAGS DE LA PISTE EN COURS
+// ==================================================
+
+void Jukebox::setCurrentTitle(const String &title)
+{
+    if (_currentIndex < 0 || _currentIndex >= static_cast<int>(_queueSize)) return;
+    _queue[_currentIndex].title = title;
+}
+
+void Jukebox::setCurrentArtist(const String &artist)
+{
+    if (_currentIndex < 0 || _currentIndex >= static_cast<int>(_queueSize)) return;
+    _queue[_currentIndex].artist = artist;
+}
+
+void Jukebox::setCurrentAlbum(const String &album)
+{
+    if (_currentIndex < 0 || _currentIndex >= static_cast<int>(_queueSize)) return;
+    _queue[_currentIndex].album = album;
+}
+
+// ==================================================
 // DEBUG
 // ==================================================
 
-void PlaybackManager::printQueue() const
+void Jukebox::printQueue() const
 {
     Serial.println();
     Serial.println("===== PLAYBACK QUEUE =====");

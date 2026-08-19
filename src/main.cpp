@@ -1,90 +1,100 @@
 #include <Arduino.h>
 
-#include "playback/playback_manager.h"
+#include "playback/jukebox.h"
+#include "sd/music_library.h"
+#include "audio/audio_player.h"
 
-PlaybackManager playback;
+Jukebox     playback;
+AudioPlayer player;
+
+String fmtTime(uint32_t s)
+{
+    char buf[8];
+    sprintf(buf, "%02u:%02u", s / 60, s % 60);
+    return String(buf);
+}
+
+void handleKey(char c)
+{
+    switch (c)
+    {
+        case ' ':
+            player.pauseResume();
+            Serial.println(player.isRunning() ? "[Lecture]" : "[Pause]");
+            break;
+
+        case 'n': case 'N':
+            player.next();
+            break;
+
+        case 'p': case 'P':
+            player.previous();
+            break;
+
+        case '+': case '=':
+            if (player.getVolume() < 21) player.setVolume(player.getVolume() + 1);
+            Serial.printf("[Volume] %d/21\n", player.getVolume());
+            break;
+
+        case '-': case '_':
+            if (player.getVolume() > 0) player.setVolume(player.getVolume() - 1);
+            Serial.printf("[Volume] %d/21\n", player.getVolume());
+            break;
+    }
+}
 
 void setup()
 {
-	Serial.begin(115200);
+    Serial.begin(115200);
+    delay(1000);
 
-	delay(1000);
+    Serial.println();
+    Serial.println("===== CHARGEMENT DE LA BIBLIOTHEQUE SD =====");
 
-	Serial.println();
-	Serial.println("===== PLAYBACK TEST =====");
+    if (!MusicLibrary::begin())
+    {
+        Serial.println("Echec montage carte SD !");
+        return;
+    }
+    Serial.println("Carte SD montee.");
 
-	MusicTrack track1(
-		"/Music/Daft Punk/Discovery/01.mp3",
-		"One More Time",
-		"Daft Punk",
-		"Discovery",
-		1);
+    size_t added = MusicLibrary::loadFolder(playback, "/", true);
+    Serial.printf("%d piste(s) chargee(s) depuis /Music\n", (int)added);
 
-	MusicTrack track2(
-		"/Music/Daft Punk/Discovery/02.mp3",
-		"Aerodynamic",
-		"Daft Punk",
-		"Discovery",
-		2);
+    if (playback.empty())
+    {
+        Serial.println("Aucune piste trouvee. Verifiez le chemin et le contenu de la carte SD.");
+        return;
+    }
 
-	MusicTrack track3(
-		"/Music/Daft Punk/Discovery/03.mp3",
-		"Digital Love",
-		"Daft Punk",
-		"Discovery",
-		3);
+    player.begin();
+    player.attachJukebox(playback);
+    player.playCurrent();
 
-	playback.add(track1);
-	playback.add(track2);
-	playback.add(track3);
-
-	Serial.println("Initial current:");
-
-	const MusicTrack *track = playback.current();
-
-	if (track)
-	{
-		track->print();
-	}
-
-	Serial.println();
-	Serial.println("Selecting index 2...");
-
-	if (playback.setCurrent(2))
-	{
-		Serial.println("Selection successful.");
-	}
-	else
-	{
-		Serial.println("Selection failed.");
-	}
-
-	Serial.println();
-	Serial.println("Current:");
-
-	track = playback.current();
-
-	if (track)
-	{
-		track->print();
-	}
-
-	Serial.println();
-	Serial.println("Selecting invalid index 10...");
-
-	if (playback.setCurrent(10))
-	{
-		Serial.println("Selection successful.");
-	}
-	else
-	{
-		Serial.println("Selection failed.");
-	}
-
-	Serial.println();
-	playback.printQueue();
+    Serial.println();
+    Serial.println("Commandes : espace=pause/lecture | n/p=piste suivante/precedente | +/-=volume");
 }
 
 void loop()
 {
+    player.loop();
+
+    while (Serial.available())
+    {
+        handleKey((char)Serial.read());
+    }
+
+    static uint32_t lastPrint = 0;
+    if (player.isRunning() && millis() - lastPrint > 1000)
+    {
+        lastPrint = millis();
+        const Music *track = playback.current();
+        Serial.printf("\r[%s / %s] %s - %s          ",
+                       fmtTime(player.currentTime()).c_str(),
+                       fmtTime(player.duration()).c_str(),
+                       track ? track->artist.c_str() : "?",
+                       track ? track->title.c_str() : "?");
+    }
+
+    vTaskDelay(1);
 }
