@@ -6,6 +6,10 @@ PlatformIo ESP32 display with LVGL
 ###### Micro-controller link
 https://docs.waveshare.com/ESP32-S3-AMOLED-1.91?variant=ESP32-S3-Touch-AMOLED-1.91-M
 
+##### Installation inspiration
+https://www.youtube.com/watch?v=ofa7ujpaJgU
+
+
 ### Windows unpacking issue
 I had an issue unpacking `esp32-core`, this is due to windows path character limited.
 
