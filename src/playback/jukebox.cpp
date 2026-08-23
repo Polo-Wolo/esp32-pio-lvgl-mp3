@@ -81,9 +81,37 @@ const Music *Jukebox::next()
         return nullptr;
     }
 
+    // Repeat "une seule piste" : on rejoue la meme
+    if (_repeat == RepeatMode::ONE)
+    {
+        return &_queue[_currentIndex];
+    }
+
+    // Lecture aleatoire : on tire un index different de l'actuel
+    if (_shuffle)
+    {
+        if (_queueSize == 1)
+            return &_queue[_currentIndex];
+
+        int newIndex;
+        do
+        {
+            newIndex = random(0, static_cast<long>(_queueSize));
+        } while (newIndex == _currentIndex);
+
+        _currentIndex = newIndex;
+        return &_queue[_currentIndex];
+    }
+
+    // Lecture sequentielle normale
     if (_currentIndex + 1 >= static_cast<int>(_queueSize))
     {
-        return nullptr;
+        if (_repeat == RepeatMode::ALL)
+        {
+            _currentIndex = 0;
+            return &_queue[_currentIndex];
+        }
+        return nullptr; // fin de la file, pas de boucle
     }
 
     _currentIndex++;
@@ -102,8 +130,33 @@ const Music *Jukebox::previous()
         return nullptr;
     }
 
+    if (_repeat == RepeatMode::ONE)
+    {
+        return &_queue[_currentIndex];
+    }
+
+    if (_shuffle)
+    {
+        if (_queueSize == 1)
+            return &_queue[_currentIndex];
+
+        int newIndex;
+        do
+        {
+            newIndex = random(0, static_cast<long>(_queueSize));
+        } while (newIndex == _currentIndex);
+
+        _currentIndex = newIndex;
+        return &_queue[_currentIndex];
+    }
+
     if (_currentIndex <= 0)
     {
+        if (_repeat == RepeatMode::ALL)
+        {
+            _currentIndex = static_cast<int>(_queueSize) - 1;
+            return &_queue[_currentIndex];
+        }
         return nullptr;
     }
 
@@ -163,20 +216,64 @@ bool Jukebox::setCurrent(size_t index)
 
 void Jukebox::setCurrentTitle(const String &title)
 {
-    if (_currentIndex < 0 || _currentIndex >= static_cast<int>(_queueSize)) return;
+    if (_currentIndex < 0 || _currentIndex >= static_cast<int>(_queueSize))
+        return;
     _queue[_currentIndex].title = title;
 }
 
 void Jukebox::setCurrentArtist(const String &artist)
 {
-    if (_currentIndex < 0 || _currentIndex >= static_cast<int>(_queueSize)) return;
+    if (_currentIndex < 0 || _currentIndex >= static_cast<int>(_queueSize))
+        return;
     _queue[_currentIndex].artist = artist;
 }
 
 void Jukebox::setCurrentAlbum(const String &album)
 {
-    if (_currentIndex < 0 || _currentIndex >= static_cast<int>(_queueSize)) return;
+    if (_currentIndex < 0 || _currentIndex >= static_cast<int>(_queueSize))
+        return;
     _queue[_currentIndex].album = album;
+}
+
+// ==================================================
+// SHUFFLE / REPEAT
+// ==================================================
+
+void Jukebox::toggleShuffle()
+{
+    _shuffle = !_shuffle;
+    Serial.printf("[Shuffle] %s\n", _shuffle ? "ON" : "OFF");
+}
+
+bool Jukebox::isShuffleEnabled() const
+{
+    return _shuffle;
+}
+
+void Jukebox::cycleRepeatMode()
+{
+    switch (_repeat)
+    {
+    case RepeatMode::OFF:
+        _repeat = RepeatMode::ALL;
+        break;
+    case RepeatMode::ALL:
+        _repeat = RepeatMode::ONE;
+        break;
+    case RepeatMode::ONE:
+        _repeat = RepeatMode::OFF;
+        break;
+    }
+
+    const char *label = (_repeat == RepeatMode::OFF)   ? "OFF"
+                        : (_repeat == RepeatMode::ALL) ? "ALL"
+                                                       : "ONE";
+    Serial.printf("[Repeat] %s\n", label);
+}
+
+RepeatMode Jukebox::repeatMode() const
+{
+    return _repeat;
 }
 
 // ==================================================

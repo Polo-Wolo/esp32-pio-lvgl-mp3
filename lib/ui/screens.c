@@ -22,9 +22,9 @@ lv_obj_t *tick_value_change_obj;
 // Screens
 //
 
-void create_screen_main() {
+void create_screen_ui_player() {
     lv_obj_t *obj = lv_obj_create(0);
-    objects.main = obj;
+    objects.ui_player = obj;
     lv_obj_set_pos(obj, 0, 0);
     lv_obj_set_size(obj, 536, 240);
     {
@@ -271,75 +271,28 @@ void create_screen_main() {
         }
     }
     
-    tick_screen_main();
+    tick_screen_ui_player();
 }
 
-void delete_screen_main() {
-    lv_obj_del(objects.main);
-    objects.main = 0;
-    objects.obj0 = 0;
-    objects.obj1 = 0;
-    objects.play_pause = 0;
-    objects.obj2 = 0;
-    objects.obj3 = 0;
-    objects.obj4 = 0;
-    objects.obj5 = 0;
-    objects.obj6 = 0;
-    objects.obj7 = 0;
-    objects.obj8 = 0;
-    objects.obj9 = 0;
-    objects.obj10 = 0;
-    objects.obj11 = 0;
+void tick_screen_ui_player() {
 }
 
-void tick_screen_main() {
-}
-
-void create_screen_list() {
+void create_screen_ui_browser() {
     lv_obj_t *obj = lv_obj_create(0);
-    objects.list = obj;
+    objects.ui_browser = obj;
     lv_obj_set_pos(obj, 0, 0);
     lv_obj_set_size(obj, 536, 240);
     
-    tick_screen_list();
+    tick_screen_ui_browser();
 }
 
-void delete_screen_list() {
-    lv_obj_del(objects.list);
-    objects.list = 0;
-}
-
-void tick_screen_list() {
-}
-
-typedef void (*create_screen_func_t)();
-create_screen_func_t create_screen_funcs[] = {
-    create_screen_main,
-    create_screen_list,
-};
-void create_screen(int screen_index) {
-    create_screen_funcs[screen_index]();
-}
-void create_screen_by_id(enum ScreensEnum screenId) {
-    create_screen_funcs[screenId - 1]();
-}
-
-typedef void (*delete_screen_func_t)();
-delete_screen_func_t delete_screen_funcs[] = {
-    delete_screen_main,
-    delete_screen_list,
-};
-void delete_screen(int screen_index) {
-    delete_screen_funcs[screen_index]();
-}
-void delete_screen_by_id(enum ScreensEnum screenId) {
-    delete_screen_funcs[screenId - 1]();
+void tick_screen_ui_browser() {
 }
 
 typedef void (*tick_screen_func_t)();
 tick_screen_func_t tick_screen_funcs[] = {
-    tick_screen_main,
-    tick_screen_list,
+    tick_screen_ui_player,
+    tick_screen_ui_browser,
 };
 void tick_screen(int screen_index) {
     if (screen_index >= 0 && screen_index < 2) {
@@ -439,6 +392,6 @@ void create_screens() {
     
     // Initialize screens
     // Create screens
-    create_screen_main();
-    create_screen_list();
+    create_screen_ui_player();
+    create_screen_ui_browser();
 }

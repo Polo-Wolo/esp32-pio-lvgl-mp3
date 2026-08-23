@@ -14,7 +14,7 @@ public:
     String title;
     String artist;
     String album;
-    int    trackNumber;
+    int trackNumber;
 
     // Constructeur par defaut : piste "vide" / invalide
     Music()
@@ -23,10 +23,10 @@ public:
     }
 
     Music(const String &path,
-               const String &title,
-               const String &artist,
-               const String &album,
-               int trackNumber)
+          const String &title,
+          const String &artist,
+          const String &album,
+          int trackNumber)
         : path(path), title(title), artist(artist), album(album), trackNumber(trackNumber)
     {
     }
@@ -50,28 +50,35 @@ public:
 // ==================================================
 // Jukebox : file de lecture + position courante
 // ==================================================
+enum class RepeatMode
+{
+    OFF,
+    ALL,
+    ONE
+};
+
 class Jukebox
 {
 public:
     Jukebox();
 
     // Queue
-    bool   add(const Music &track);
-    void   clear();
+    bool add(const Music &track);
+    void clear();
     size_t size() const;
-    bool   empty() const;
+    bool empty() const;
 
     // Current
     const Music *current() const;
 
-    // Next / previous
+    // Next / previous (tiennent compte du shuffle et du repeat)
     const Music *next();
     const Music *previous();
-    bool  hasNext() const;
-    bool  hasPrevious() const;
+    bool hasNext() const;
+    bool hasPrevious() const;
 
     // Position
-    int  currentIndex() const;
+    int currentIndex() const;
     bool setCurrent(size_t index);
 
     // Met a jour les tags de la piste EN COURS (appele quand le decodeur
@@ -81,11 +88,22 @@ public:
     void setCurrentArtist(const String &artist);
     void setCurrentAlbum(const String &album);
 
+    // Lecture aleatoire
+    void toggleShuffle();
+    bool isShuffleEnabled() const;
+
+    // Boucle : OFF -> ALL -> ONE -> OFF a chaque appel (comportement bouton unique)
+    void cycleRepeatMode();
+    RepeatMode repeatMode() const;
+
     // Debug
     void printQueue() const;
 
 private:
     Music _queue[MAX_QUEUE_SIZE];
-    size_t     _queueSize;
-    int        _currentIndex;
+    size_t _queueSize;
+    int _currentIndex;
+
+    bool _shuffle = false;
+    RepeatMode _repeat = RepeatMode::OFF;
 };
