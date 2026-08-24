@@ -12,6 +12,8 @@
 
 objects_t objects;
 
+screen_ui_browser_state_t screen_ui_browser_state;
+
 //
 // Event handlers
 //
@@ -27,6 +29,7 @@ void create_screen_ui_player() {
     objects.ui_player = obj;
     lv_obj_set_pos(obj, 0, 0);
     lv_obj_set_size(obj, 536, 240);
+    lv_obj_add_event_cb(obj, action_gesture, LV_EVENT_GESTURE, (void *)0);
     {
         lv_obj_t *parent_obj = obj;
         {
@@ -99,7 +102,9 @@ void create_screen_ui_player() {
             {
                 lv_obj_t *parent_obj = obj;
                 {
+                    // icon_play_pause
                     lv_obj_t *obj = lv_img_create(parent_obj);
+                    objects.icon_play_pause = obj;
                     lv_obj_set_pos(obj, 45, 5);
                     lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                     lv_img_set_src(obj, &img_play);
@@ -278,15 +283,59 @@ void tick_screen_ui_player() {
 }
 
 void create_screen_ui_browser() {
+    screen_ui_browser_state_t *state = &screen_ui_browser_state;
+    (void)state;
     lv_obj_t *obj = lv_obj_create(0);
     objects.ui_browser = obj;
     lv_obj_set_pos(obj, 0, 0);
     lv_obj_set_size(obj, 536, 240);
+    lv_obj_add_event_cb(obj, action_gesture, LV_EVENT_GESTURE, (void *)0);
+    {
+        lv_obj_t *parent_obj = obj;
+        {
+            lv_obj_t *obj = lv_list_create(parent_obj);
+            lv_obj_set_pos(obj, 41, 30);
+            lv_obj_set_size(obj, 382, 162);
+            {
+                lv_obj_t *parent_obj = obj;
+                {
+                    lv_obj_t *obj = lv_spangroup_create(parent_obj);
+                    lv_obj_set_pos(obj, 59, 80);
+                    lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                    {
+                        state->span_0 = lv_spangroup_new_span(obj);
+                        lv_span_set_text_static(state->span_0, "Span");
+                    }
+                    lv_spangroup_refr_mode(obj);
+                }
+                {
+                    lv_obj_t *obj = lv_label_create(parent_obj);
+                    lv_obj_set_pos(obj, 69, 71);
+                    lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                    lv_label_set_text_static(obj, "Text");
+                }
+                {
+                    lv_obj_t *obj = lv_label_create(parent_obj);
+                    lv_obj_set_pos(obj, 140, 136);
+                    lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                    lv_label_set_text_static(obj, "Text");
+                }
+                {
+                    lv_obj_t *obj = lv_label_create(parent_obj);
+                    lv_obj_set_pos(obj, 203, 209);
+                    lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
+                    lv_label_set_text_static(obj, "Text");
+                }
+            }
+        }
+    }
     
     tick_screen_ui_browser();
 }
 
 void tick_screen_ui_browser() {
+    screen_ui_browser_state_t *state = &screen_ui_browser_state;
+    (void)state;
 }
 
 typedef void (*tick_screen_func_t)();

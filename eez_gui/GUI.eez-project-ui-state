@@ -189,7 +189,6 @@
               "type": "tabset",
               "id": "EDITORS",
               "weight": 52.78611632270169,
-              "selected": 1,
               "enableDeleteWhenEmpty": false,
               "enableClose": false,
               "children": [
@@ -208,7 +207,7 @@
                 {
                   "type": "tab",
                   "id": "#9d9ee496-74a1-4e75-b961-f6b386e79051",
-                  "name": "Main",
+                  "name": "ui_player",
                   "component": "editor",
                   "config": {
                     "objectPath": "[GUI.eez-project]:/userPages/0",
@@ -1074,6 +1073,23 @@
         "secondToPx": 200,
         "scrollLeft": 0
       }
+    },
+    "[GUI.eez-project]:/userPages/1[flow-state]": {
+      "selectionFront": {},
+      "selectionBack": {},
+      "transform": {
+        "translate": {
+          "x": -268,
+          "y": -120
+        },
+        "scale": 0.9
+      },
+      "timeline": {
+        "isEditorActive": false,
+        "position": 0,
+        "secondToPx": 200,
+        "scrollLeft": 0
+      }
     }
   },
   "activeOutputSection": 0,
@@ -1090,10 +1106,7 @@
   "selectedStylePropertyName": "",
   "lvglPart": "MAIN",
   "lvglState": "CHECKED",
-  "lvglExpandedPropertiesGroup": [
-    "BORDER",
-    "BACKGROUND"
-  ],
+  "lvglExpandedPropertiesGroup": [],
   "showInactiveFlowsInDebugger": true,
   "globalFlowZoom": true,
   "flowZoom": 0.9,

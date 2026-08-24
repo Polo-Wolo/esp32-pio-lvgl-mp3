@@ -1,8 +1,12 @@
 #include <Arduino.h>
 #include "ui_events.h"
 #include "ui.h" // genere par SquareLine Studio : declare ui_player, ui_browser...
+#include "screens.h" // genere par SquareLine Studio : declare loadScreen()
+#include "images.h"  // genere par SquareLine Studio : declare img_skip_back, img_skip_next, img_play, img_pause...
 #include "playback/jukebox.h"
 #include "audio/audio_player.h"
+
+
 
 // Definis dans main.cpp
 extern Jukebox playback;
@@ -23,7 +27,11 @@ static UIScreen currentScreen = UIScreen::NOW_PLAYING;
 void action_play_pause_btn(lv_event_t *e)
 {
     player.pauseResume();
-    Serial.println(player.isRunning() ? "[Lecture]" : "[Pause]");
+
+    bool running = player.isRunning();
+    lv_img_set_src(objects.icon_play_pause, running ? &img_pause : &img_play);
+
+    Serial.println(running ? "[Lecture]" : "[Pause]");
 }
 
 void action_next_btn(lv_event_t *e)

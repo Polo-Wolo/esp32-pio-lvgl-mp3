@@ -22,6 +22,7 @@ typedef struct _objects_t {
     lv_obj_t *obj0;
     lv_obj_t *obj1;
     lv_obj_t *play_pause;
+    lv_obj_t *icon_play_pause;
     lv_obj_t *obj2;
     lv_obj_t *obj3;
     lv_obj_t *obj4;
@@ -35,6 +36,12 @@ typedef struct _objects_t {
 } objects_t;
 
 extern objects_t objects;
+
+typedef struct {
+    lv_span_t *span_0;
+} screen_ui_browser_state_t;
+
+extern screen_ui_browser_state_t screen_ui_browser_state;
 
 void create_screen_ui_player();
 void tick_screen_ui_player();

@@ -5,6 +5,7 @@
     "images.c",
     "images.h",
     "images/ui_image_heart.c",
+    "images/ui_image_pause.c",
     "images/ui_image_placeholder.c",
     "images/ui_image_play.c",
     "images/ui_image_repeat.c",
