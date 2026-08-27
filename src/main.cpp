@@ -1,77 +1,80 @@
-#include <Arduino.h>
-#include "esp_log.h"
-#include "display_manager.h"
-#include "ui.h" // UI header genere par SquareLine Studio
+/**
+ * @file main.cpp
+ * @brief Minimal LVGL v9 test: bright background + one touch button.
+ *        Used to isolate whether the black-screen issue is in the panel/flush
+ *        path or in the LVGL object tree.
+ */
 
-#include "playback/jukebox.h"
-#include "sd/music_library.h"
-#include "audio/audio_player.h"
+#include <Arduino.h>
+#include "display_manager.h"
+#include "lvgl.h"
 
 static const char *TAG = "main";
 
-// Instances globales (referencees via "extern" dans ui_events.cpp)
-Jukebox     playback;
-AudioPlayer player;
+static void btn_event_cb(lv_event_t *e)
+{
+  lv_event_code_t code = lv_event_get_code(e);
+  if (code != LV_EVENT_CLICKED) {
+    return;
+  }
+
+  lv_obj_t *btn = (lv_obj_t *)lv_event_get_target(e);
+  lv_obj_t *label = lv_obj_get_child(btn, 0);
+
+  static uint32_t click_count = 0;
+  click_count++;
+
+  Serial.printf("[%s] Button clicked, count=%lu\n", TAG, (unsigned long)click_count);
+  lv_label_set_text_fmt(label, "Clicked: %lu", (unsigned long)click_count);
+}
 
 void setup()
 {
-    Serial.begin(115200);
-    ESP_LOGI(TAG, "Application starting...");
+  Serial.begin(115200);
+  delay(300);
+  Serial.println("Booting...");
 
-    // Graine aleatoire pour le mode shuffle (sinon meme sequence a chaque boot)
-    randomSeed(esp_random());
+  esp_err_t ret = display_init();
+  if (ret != ESP_OK) {
+    Serial.printf("display_init() FAILED: %d\n", ret);
+    return;
+  }
+  Serial.println("display_init() OK");
 
-    // Initialisation ecran + LVGL
-    esp_err_t ret = display_init();
-    if (ret != ESP_OK)
-    {
-        ESP_LOGE(TAG, "Display initialization failed with error: %d", ret);
-        return;
-    }
+  // display_init() already spins up its own FreeRTOS task (lvgl_port_task)
+  // which calls lv_timer_handler() in a loop, so any LVGL call made from
+  // setup()/loop() must be wrapped in display_lvgl_lock()/unlock() to avoid
+  // touching LVGL's non-thread-safe state from two tasks at once.
+  if (!display_lvgl_lock(-1)) {
+    Serial.println("Could not lock LVGL mutex");
+    return;
+  }
 
-    // Initialisation UI (SquareLine Studio)
-    if (display_lvgl_lock(-1))
-    {
-        ESP_LOGI(TAG, "Initializing UI");
-        ui_init();
-        display_lvgl_unlock();
-        ESP_LOGI(TAG, "UI initialization complete");
-    }
-    else
-    {
-        ESP_LOGE(TAG, "Failed to acquire LVGL mutex for UI initialization");
-        return;
-    }
+  lv_obj_t *scr = lv_screen_active();
 
-    // Carte SD + bibliotheque musicale
-    if (!MusicLibrary::begin())
-    {
-        ESP_LOGE(TAG, "Echec montage carte SD");
-        return;
-    }
-    ESP_LOGI(TAG, "Carte SD montee");
+  // Deliberately loud, non-default color: if this never shows up on the
+  // panel, the problem is downstream of LVGL (flush / SPI / backlight),
+  // not a missing widget or a theme issue.
+  lv_obj_set_style_bg_color(scr, lv_color_hex(0x003a57), LV_PART_MAIN);
+  lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, LV_PART_MAIN);
 
-    size_t added = MusicLibrary::loadFolder(playback, "/", true);
-    ESP_LOGI(TAG, "%d piste(s) chargee(s) depuis /", (int)added);
+  lv_obj_t *btn = lv_button_create(scr);
+  lv_obj_set_size(btn, 160, 60);
+  lv_obj_center(btn);
+  lv_obj_add_event_cb(btn, btn_event_cb, LV_EVENT_CLICKED, NULL);
 
-    if (playback.empty())
-    {
-        ESP_LOGW(TAG, "Aucune piste trouvee sur la carte SD");
-        return;
-    }
+  lv_obj_t *label = lv_label_create(btn);
+  lv_label_set_text(label, "Touch me");
+  lv_obj_center(label);
 
-    // Audio I2S relie au Jukebox
-    player.begin();
-    player.attachJukebox(playback);
-    player.playCurrent();
+  display_lvgl_unlock();
 
-    ESP_LOGI(TAG, "Setup complete");
+  Serial.println("UI created");
 }
 
 void loop()
 {
-    // La tache LVGL gere l'affichage separement (voir display_manager).
-    // Ici on ne fait que faire avancer le decodeur audio.
-    player.loop();
-    vTaskDelay(pdMS_TO_TICKS(1));
+  // Nothing to do here: lvgl_port_task (started inside display_init())
+  // already handles lv_timer_handler() on its own schedule.
+  vTaskDelay(pdMS_TO_TICKS(1000));
 }

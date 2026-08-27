@@ -40,7 +40,12 @@
  #define EXAMPLE_LVGL_TICK_PERIOD_MS    2
  #define EXAMPLE_LVGL_TASK_MAX_DELAY_MS 500
  #define EXAMPLE_LVGL_TASK_MIN_DELAY_MS 1
- #define EXAMPLE_LVGL_TASK_STACK_SIZE   (4 * 1024)
+ // v9 runs the whole draw pipeline (default theme, widget rendering, rounding)
+ // inline in this task since LV_USE_OS == LV_OS_NONE (no separate draw thread).
+ // 4 KB (the old v8 value) is not enough and causes a stack-canary panic on
+ // first render. Start at 12 KB; you can right-size later by checking
+ // uxTaskGetStackHighWaterMark() on the "LVGL" task once it's stable.
+ #define EXAMPLE_LVGL_TASK_STACK_SIZE   (12 * 1024)
  #define EXAMPLE_LVGL_TASK_PRIORITY     2
  
  /**
@@ -51,6 +56,19 @@
   * @return ESP_OK if successful, otherwise an error code
   */
  esp_err_t display_init();
+ 
+ /**
+  * @brief Set the display rotation
+  *
+  * Updates both LVGL's internal rotation state and the physical panel's
+  * swap/mirror settings to match. In LVGL v8 this happened automatically
+  * whenever lv_disp_set_rotation() was called (via disp_drv.drv_update_cb);
+  * v9 dropped that automatic hook, so call this function instead of
+  * lv_display_set_rotation() directly if you need to rotate at runtime.
+  *
+  * @param rotation One of LV_DISPLAY_ROTATION_0/90/180/270
+  */
+ void display_set_rotation(lv_display_rotation_t rotation);
  
  /**
   * @brief Lock the LVGL mutex

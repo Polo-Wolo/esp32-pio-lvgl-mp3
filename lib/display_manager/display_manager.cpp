@@ -1,6 +1,8 @@
 /**
  * @file display_manager.cpp
  * @brief Implementation of display and touch management functionality
+ * @note  Ported from LVGL v8 driver API (lv_disp_drv_t / lv_indev_drv_t) to the
+ *        LVGL v9 display/indev API (lv_display_t / lv_indev_t).
  */
 
  #include "display_manager.h"
@@ -17,6 +19,12 @@
  
  static const char *TAG = "display_mgr";
  static SemaphoreHandle_t lvgl_mux = NULL;
+
+ // Kept at file scope so display_set_rotation() can update both LVGL and the
+ // physical panel after display_init() has run (v9 no longer has a
+ // drv_update_cb hook that LVGL calls automatically on rotation change).
+ static lv_display_t *s_disp = NULL;
+ static esp_lcd_panel_handle_t s_panel_handle = NULL;
  
  // LCD initialization commands
  static const sh8601_lcd_init_cmd_t lcd_init_cmds[] = {
@@ -32,70 +40,84 @@
  
  // Forward declarations of internal functions
  static bool notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx);
- static void lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map);
- static void lvgl_update_cb(lv_disp_drv_t *drv);
- static void lvgl_rounder_cb(struct _lv_disp_drv_t *disp_drv, lv_area_t *area);
+ static void lvgl_flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map);
+ static void apply_panel_rotation(esp_lcd_panel_handle_t panel_handle, lv_display_rotation_t rotation);
+ static void lvgl_rounder_event_cb(lv_event_t *e);
  static void increase_lvgl_tick(void *arg);
  static void lvgl_port_task(void *arg);
  
  #if EXAMPLE_USE_TOUCH
- static void lvgl_touch_cb(lv_indev_drv_t *drv, lv_indev_data_t *data);
+ static void lvgl_touch_cb(lv_indev_t *indev, lv_indev_data_t *data);
  #endif
  
  // Notifies LVGL that the flush is ready
  static bool notify_lvgl_flush_ready(esp_lcd_panel_io_handle_t panel_io, esp_lcd_panel_io_event_data_t *edata, void *user_ctx)
  {
-   lv_disp_drv_t *disp_driver = (lv_disp_drv_t *)user_ctx;
-   lv_disp_flush_ready(disp_driver);
+   lv_display_t *disp = (lv_display_t *)user_ctx;
+   lv_display_flush_ready(disp);
    return false;
  }
  
  // LVGL flush callback
- static void lvgl_flush_cb(lv_disp_drv_t *drv, const lv_area_t *area, lv_color_t *color_map)
+ // NOTE: v9 passes a raw uint8_t* pixel buffer (px_map) instead of lv_color_t*.
+ // With LV_COLOR_DEPTH == 16 this buffer holds the same RGB565 bytes as before,
+ // so it can be handed straight to esp_lcd_panel_draw_bitmap().
+ static void lvgl_flush_cb(lv_display_t *disp, const lv_area_t *area, uint8_t *px_map)
  {
-   esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t) drv->user_data;
+   esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t) lv_display_get_user_data(disp);
    const int offsetx1 = area->x1;
    const int offsetx2 = area->x2;
    const int offsety1 = area->y1;
    const int offsety2 = area->y2;
  
    // copy a buffer's content to a specific area of the display
-   esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, color_map);
+   esp_lcd_panel_draw_bitmap(panel_handle, offsetx1, offsety1, offsetx2 + 1, offsety2 + 1, px_map);
  }
  
- // LVGL update callback - rotates display when needed
- static void lvgl_update_cb(lv_disp_drv_t *drv)
+ // Applies the panel-level swap/mirror settings for a given LVGL rotation.
+ // In v8 this ran automatically via disp_drv.drv_update_cb whenever LVGL's
+ // rotation changed. v9 dropped that hook, so it is now called explicitly:
+ // once at init, and again from display_set_rotation() if you rotate at runtime.
+ //
+ // NOTE: this SH8601 panel logs "swap_xy is not supported by this panel" and
+ // returns an error from esp_lcd_panel_swap_xy() — it's a fixed-orientation
+ // QSPI/round panel that only supports mirroring, not axis swap. The calls
+ // below are trimmed to mirror-only to stop the (harmless but noisy) error
+ // log; if you later confirm swap_xy IS needed for your exact module, restore
+ // it but check/log the returned esp_err_t instead of ignoring it.
+ static void apply_panel_rotation(esp_lcd_panel_handle_t panel_handle, lv_display_rotation_t rotation)
  {
-   esp_lcd_panel_handle_t panel_handle = (esp_lcd_panel_handle_t) drv->user_data;
- 
-   switch (drv->rotated)
+   switch (rotation)
    {
-     case LV_DISP_ROT_NONE:
-       // Rotate LCD display
-       esp_lcd_panel_swap_xy(panel_handle, false);
+     case LV_DISPLAY_ROTATION_0:
        esp_lcd_panel_mirror(panel_handle, true, false);
        break;
-     case LV_DISP_ROT_90:
-       // Rotate LCD display
-       esp_lcd_panel_swap_xy(panel_handle, true);
+     case LV_DISPLAY_ROTATION_90:
        esp_lcd_panel_mirror(panel_handle, true, true);
        break;
-     case LV_DISP_ROT_180:
-       // Rotate LCD display
-       esp_lcd_panel_swap_xy(panel_handle, false);
+     case LV_DISPLAY_ROTATION_180:
        esp_lcd_panel_mirror(panel_handle, false, true);
        break;
-     case LV_DISP_ROT_270:
-       // Rotate LCD display
-       esp_lcd_panel_swap_xy(panel_handle, true);
+     case LV_DISPLAY_ROTATION_270:
        esp_lcd_panel_mirror(panel_handle, false, false);
        break;
    }
  }
  
  // LVGL rounder callback - ensures coordinates are properly aligned
- static void lvgl_rounder_cb(struct _lv_disp_drv_t *disp_drv, lv_area_t *area)
+ // NOTE: v9 removed the disp_drv.rounder_cb field entirely. The documented
+ // replacement is an event callback on LV_EVENT_INVALIDATE_AREA, registered
+ // via lv_display_add_event_cb() instead of a dedicated setter function.
+ // Caveat (see lvgl/lvgl#8582): this only rounds the *flush* area, not the
+ // area LVGL actually renders into, so the extra rounded pixel(s) can contain
+ // stale/garbage data rather than freshly drawn pixels. That's usually
+ // harmless for a 1px expand-to-even like this one, but if you see fringing
+ // artifacts on partial updates, force a full-screen redraw (e.g.
+ // lv_obj_invalidate(lv_screen_active())) after layout changes.
+ static void lvgl_rounder_event_cb(lv_event_t *e)
  {
+   lv_area_t *area = (lv_area_t *)lv_event_get_invalidated_area(e);
+
    uint16_t x1 = area->x1;
    uint16_t x2 = area->x2;
  
@@ -112,7 +134,7 @@
  
  #if EXAMPLE_USE_TOUCH
  // LVGL touch callback
- static void lvgl_touch_cb(lv_indev_drv_t *drv, lv_indev_data_t *data)
+ static void lvgl_touch_cb(lv_indev_t *indev, lv_indev_data_t *data)
  {
    uint16_t tp_x, tp_y;
    uint8_t win;
@@ -163,8 +185,6 @@
  
  esp_err_t display_init()
  {
-   static lv_disp_draw_buf_t disp_buf; // contains internal graphic buffer(s) called draw buffer(s)
-   static lv_disp_drv_t disp_drv;      // contains callback functions
    esp_err_t ret = ESP_OK;
  
  #if EXAMPLE_PIN_NUM_BK_LIGHT >= 0
@@ -179,6 +199,20 @@
          return ret;
      }
  #endif
+ 
+   ESP_LOGI(TAG, "Initialize LVGL library");
+   lv_init();
+ 
+   // Create the LVGL display object early: its pointer is needed below as the
+   // user_ctx for the panel IO "flush ready" callback, before the panel itself
+   // exists. This is a v9-specific reordering versus the old disp_drv struct,
+   // whose address could be taken before it was fully populated.
+   lv_display_t *disp = lv_display_create(EXAMPLE_LCD_H_RES, EXAMPLE_LCD_V_RES);
+   if (disp == NULL) {
+       ESP_LOGE(TAG, "Failed to create LVGL display");
+       return ESP_ERR_NO_MEM;
+   }
+   s_disp = disp;
  
    ESP_LOGI(TAG, "Initialize SPI bus");
    const spi_bus_config_t buscfg = SH8601_PANEL_BUS_QSPI_CONFIG(EXAMPLE_PIN_NUM_LCD_PCLK,
@@ -197,7 +231,7 @@
    esp_lcd_panel_io_handle_t io_handle = NULL;
    const esp_lcd_panel_io_spi_config_t io_config = SH8601_PANEL_IO_QSPI_CONFIG(EXAMPLE_PIN_NUM_LCD_CS,
                                                                                  notify_lvgl_flush_ready,
-                                                                                 &disp_drv);
+                                                                                 disp);
    sh8601_vendor_config_t vendor_config = {
        .init_cmds = lcd_init_cmds,
        .init_cmds_size = sizeof(lcd_init_cmds) / sizeof(lcd_init_cmds[0]),
@@ -247,14 +281,13 @@
        return ret;
    }
  
+   s_panel_handle = panel_handle;
+ 
  #if EXAMPLE_USE_TOUCH
    ESP_LOGI(TAG, "Initialize touch controller");
    Touch_Init();
  #endif
  
-   ESP_LOGI(TAG, "Initialize LVGL library");
-   lv_init();
-   
    // Alloc draw buffers used by LVGL
    // It's recommended to choose the size of the draw buffer(s) to be at least 1/10 screen sized
    lv_color_t *buf1 = (lv_color_t*)heap_caps_malloc(EXAMPLE_LCD_H_RES * EXAMPLE_LVGL_BUF_HEIGHT * sizeof(lv_color_t), MALLOC_CAP_DMA);
@@ -269,20 +302,24 @@
        ESP_LOGE(TAG, "Failed to allocate LVGL buffer 2");
        return ESP_ERR_NO_MEM;
    }
-   
-   // Initialize LVGL draw buffers
-   lv_disp_draw_buf_init(&disp_buf, buf1, buf2, EXAMPLE_LCD_H_RES * EXAMPLE_LVGL_BUF_HEIGHT);
  
    ESP_LOGI(TAG, "Register display driver to LVGL");
-   lv_disp_drv_init(&disp_drv);
-   disp_drv.hor_res = EXAMPLE_LCD_H_RES;
-   disp_drv.ver_res = EXAMPLE_LCD_V_RES;
-   disp_drv.flush_cb = lvgl_flush_cb;
-   disp_drv.rounder_cb = lvgl_rounder_cb;
-   disp_drv.drv_update_cb = lvgl_update_cb;
-   disp_drv.draw_buf = &disp_buf;
-   disp_drv.user_data = panel_handle;
-   lv_disp_t *disp = lv_disp_drv_register(&disp_drv);
+   lv_display_set_user_data(disp, panel_handle);
+   lv_display_set_flush_cb(disp, lvgl_flush_cb);
+   lv_display_add_event_cb(disp, lvgl_rounder_event_cb, LV_EVENT_INVALIDATE_AREA, NULL);
+   // Buffer size is expressed in bytes in v9 (not pixel count); partial render
+   // mode matches the old double-buffer / partial-flush behavior.
+   lv_display_set_buffers(disp, buf1, buf2,
+                           EXAMPLE_LCD_H_RES * EXAMPLE_LVGL_BUF_HEIGHT * sizeof(lv_color_t),
+                           LV_DISPLAY_RENDER_MODE_PARTIAL);
+ 
+   // Carries over your lv_conf.h v8 setting LV_COLOR_16_SWAP = 1: in v9 the
+   // swap is a runtime display color format instead of a compile-time flag.
+   lv_display_set_color_format(disp, LV_COLOR_FORMAT_RGB565_SWAPPED);
+ 
+   // Apply the default (unrotated) panel orientation. Equivalent to what
+   // drv_update_cb used to do once automatically at registration time.
+   apply_panel_rotation(panel_handle, LV_DISPLAY_ROTATION_0);
  
    ESP_LOGI(TAG, "Install LVGL tick timer");
    // Tick interface for LVGL (using esp_timer to generate 2ms periodic event)
@@ -305,12 +342,10 @@
  
  #if EXAMPLE_USE_TOUCH
    ESP_LOGI(TAG, "Register touch input device to LVGL");
-   static lv_indev_drv_t indev_drv;    // Input device driver (Touch)
-   lv_indev_drv_init(&indev_drv);
-   indev_drv.type = LV_INDEV_TYPE_POINTER;
-   indev_drv.disp = disp;
-   indev_drv.read_cb = lvgl_touch_cb;
-   lv_indev_drv_register(&indev_drv);
+   lv_indev_t *indev = lv_indev_create();
+   lv_indev_set_type(indev, LV_INDEV_TYPE_POINTER);
+   lv_indev_set_read_cb(indev, lvgl_touch_cb);
+   lv_indev_set_display(indev, disp);
  #endif
  
    lvgl_mux = xSemaphoreCreateMutex();
@@ -328,6 +363,16 @@
  
    ESP_LOGI(TAG, "Display initialization completed successfully");
    return ESP_OK;
+ }
+ 
+ void display_set_rotation(lv_display_rotation_t rotation)
+ {
+   if (s_disp == NULL || s_panel_handle == NULL) {
+       ESP_LOGW(TAG, "display_init must be called first");
+       return;
+   }
+   lv_display_set_rotation(s_disp, rotation);
+   apply_panel_rotation(s_panel_handle, rotation);
  }
  
  bool display_lvgl_lock(int timeout_ms)

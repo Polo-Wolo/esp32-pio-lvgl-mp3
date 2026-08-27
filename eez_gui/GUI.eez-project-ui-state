@@ -1,6 +1,7 @@
 {
   "navigation": {
     "selectedUserPageObject": "[GUI.eez-project]:/userPages/0",
+    "selectedBitmapObject": "[GUI.eez-project]:/bitmaps/-1",
     "subnavigationSelectedItems": {
       "variables-tab/sub-navigation/selected-item": "Global"
     }
@@ -23,6 +24,7 @@
           },
           {
             "type": "border",
+            "selected": 2,
             "size": 240,
             "location": "right",
             "children": [
@@ -70,7 +72,7 @@
           },
           {
             "type": "border",
-            "selected": 1,
+            "selected": 0,
             "location": "bottom",
             "children": [
               {
@@ -189,6 +191,7 @@
               "type": "tabset",
               "id": "EDITORS",
               "weight": 52.78611632270169,
+              "selected": 1,
               "enableDeleteWhenEmpty": false,
               "enableClose": false,
               "children": [
@@ -215,8 +218,7 @@
                   },
                   "icon": "svg:page"
                 }
-              ],
-              "active": true
+              ]
             },
             {
               "type": "tabset",
@@ -239,7 +241,8 @@
                   "enableClose": false,
                   "icon": "svg:components"
                 }
-              ]
+              ],
+              "active": true
             }
           ]
         }
@@ -614,7 +617,8 @@
                       "component": "bitmaps",
                       "enableClose": false
                     }
-                  ]
+                  ],
+                  "active": true
                 },
                 {
                   "type": "tabset",
@@ -1105,8 +1109,10 @@
   "logsPanelFilter": "all",
   "selectedStylePropertyName": "",
   "lvglPart": "MAIN",
-  "lvglState": "CHECKED",
-  "lvglExpandedPropertiesGroup": [],
+  "lvglState": "DEFAULT",
+  "lvglExpandedPropertiesGroup": [
+    "BACKGROUND"
+  ],
   "showInactiveFlowsInDebugger": true,
   "globalFlowZoom": true,
   "flowZoom": 0.9,
