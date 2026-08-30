@@ -6,6 +6,7 @@
 #include "playback/jukebox.h"
 #include "sd/music_library.h"
 #include "audio/audio_player.h"
+#include "ui/ui_now_playing.h"
 
 static const char *TAG = "main";
 
@@ -90,5 +91,13 @@ void loop()
   // La tache LVGL gere l'affichage separement (voir display_manager).
   // Ici on ne fait que faire avancer le decodeur audio.
   player.loop();
+
+  static uint32_t lastUiUpdate = 0;
+  if (millis() - lastUiUpdate > 250)
+  {
+    lastUiUpdate = millis();
+    updateNowPlayingUI();
+  }
+
   vTaskDelay(pdMS_TO_TICKS(1));
 }

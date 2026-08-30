@@ -19,20 +19,22 @@ enum ScreensEnum {
 typedef struct _objects_t {
     lv_obj_t *ui_player;
     lv_obj_t *ui_browser;
-    lv_obj_t *obj0;
-    lv_obj_t *obj1;
+    lv_obj_t *previous;
+    lv_obj_t *icon_previous;
+    lv_obj_t *next;
+    lv_obj_t *icon_next;
     lv_obj_t *play_pause;
     lv_obj_t *icon_play_pause;
-    lv_obj_t *obj2;
-    lv_obj_t *obj3;
-    lv_obj_t *obj4;
-    lv_obj_t *obj5;
-    lv_obj_t *obj6;
-    lv_obj_t *obj7;
-    lv_obj_t *obj8;
-    lv_obj_t *obj9;
-    lv_obj_t *obj10;
-    lv_obj_t *obj11;
+    lv_obj_t *music_mode;
+    lv_obj_t *obj0;
+    lv_obj_t *track_iimage;
+    lv_obj_t *obj1;
+    lv_obj_t *track_text;
+    lv_obj_t *artist_text;
+    lv_obj_t *album_text;
+    lv_obj_t *track_current_time;
+    lv_obj_t *track_duration;
+    lv_obj_t *track_seek_slider;
 } objects_t;
 
 extern objects_t objects;

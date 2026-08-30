@@ -33,8 +33,9 @@ void create_screen_ui_player() {
     {
         lv_obj_t *parent_obj = obj;
         {
+            // previous
             lv_obj_t *obj = lv_button_create(parent_obj);
-            objects.obj0 = obj;
+            objects.previous = obj;
             lv_obj_set_pos(obj, 178, 178);
             lv_obj_set_size(obj, 102, 62);
             lv_obj_set_style_bg_color(obj, lv_color_hex(0x181818), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -50,7 +51,9 @@ void create_screen_ui_player() {
             {
                 lv_obj_t *parent_obj = obj;
                 {
+                    // icon_previous
                     lv_obj_t *obj = lv_image_create(parent_obj);
+                    objects.icon_previous = obj;
                     lv_obj_set_pos(obj, 19, 5);
                     lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                     lv_image_set_src(obj, &img_skip_back);
@@ -58,8 +61,9 @@ void create_screen_ui_player() {
             }
         }
         {
+            // next
             lv_obj_t *obj = lv_button_create(parent_obj);
-            objects.obj1 = obj;
+            objects.next = obj;
             lv_obj_set_pos(obj, 434, 178);
             lv_obj_set_size(obj, 102, 62);
             lv_obj_add_event_cb(obj, action_next_btn, LV_EVENT_CLICKED, (void *)0);
@@ -76,7 +80,9 @@ void create_screen_ui_player() {
             {
                 lv_obj_t *parent_obj = obj;
                 {
+                    // icon_next
                     lv_obj_t *obj = lv_image_create(parent_obj);
+                    objects.icon_next = obj;
                     lv_obj_set_pos(obj, 19, 5);
                     lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                     lv_image_set_src(obj, &img_skip_forward);
@@ -112,8 +118,9 @@ void create_screen_ui_player() {
             }
         }
         {
+            // music_mode
             lv_obj_t *obj = lv_button_create(parent_obj);
-            objects.obj2 = obj;
+            objects.music_mode = obj;
             lv_obj_set_pos(obj, 0, 178);
             lv_obj_set_size(obj, 83, 62);
             lv_obj_set_style_bg_color(obj, lv_color_hex(0x181818), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -138,7 +145,7 @@ void create_screen_ui_player() {
         }
         {
             lv_obj_t *obj = lv_button_create(parent_obj);
-            objects.obj3 = obj;
+            objects.obj0 = obj;
             lv_obj_set_pos(obj, 89, 178);
             lv_obj_set_size(obj, 89, 62);
             lv_obj_set_style_bg_color(obj, lv_color_hex(0x181818), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -162,8 +169,9 @@ void create_screen_ui_player() {
             }
         }
         {
+            // track_iimage
             lv_obj_t *obj = lv_obj_create(parent_obj);
-            objects.obj4 = obj;
+            objects.track_iimage = obj;
             lv_obj_set_pos(obj, 0, 0);
             lv_obj_set_size(obj, 178, 178);
             lv_obj_set_style_bg_color(obj, lv_color_hex(0x4a79f2), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -182,7 +190,7 @@ void create_screen_ui_player() {
         }
         {
             lv_obj_t *obj = lv_obj_create(parent_obj);
-            objects.obj5 = obj;
+            objects.obj1 = obj;
             lv_obj_set_pos(obj, 178, 0);
             lv_obj_set_size(obj, 358, 166);
             lv_obj_set_style_pad_left(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -200,8 +208,9 @@ void create_screen_ui_player() {
             {
                 lv_obj_t *parent_obj = obj;
                 {
+                    // track_text
                     lv_obj_t *obj = lv_label_create(parent_obj);
-                    objects.obj6 = obj;
+                    objects.track_text = obj;
                     lv_obj_set_pos(obj, 14, 14);
                     lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                     lv_obj_set_style_text_color(obj, lv_color_hex(0xffffff), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -209,8 +218,9 @@ void create_screen_ui_player() {
                     lv_label_set_text_static(obj, "On Melancholy Hill");
                 }
                 {
+                    // artist_text
                     lv_obj_t *obj = lv_label_create(parent_obj);
-                    objects.obj7 = obj;
+                    objects.artist_text = obj;
                     lv_obj_set_pos(obj, 14, 56);
                     lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                     lv_obj_set_style_text_color(obj, lv_color_hex(0xffffff), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -220,8 +230,9 @@ void create_screen_ui_player() {
                     lv_label_set_text_static(obj, "Gorillaz");
                 }
                 {
+                    // album_text
                     lv_obj_t *obj = lv_label_create(parent_obj);
-                    objects.obj8 = obj;
+                    objects.album_text = obj;
                     lv_obj_set_pos(obj, 14, 95);
                     lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                     lv_obj_set_style_text_color(obj, lv_color_hex(0xffffff), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -231,8 +242,9 @@ void create_screen_ui_player() {
                     lv_label_set_text_static(obj, "Plastic Beach");
                 }
                 {
+                    // track_current_time
                     lv_obj_t *obj = lv_label_create(parent_obj);
-                    objects.obj9 = obj;
+                    objects.track_current_time = obj;
                     lv_obj_set_pos(obj, 9, 142);
                     lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                     lv_obj_set_style_text_color(obj, lv_color_hex(0xffffff), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -240,8 +252,9 @@ void create_screen_ui_player() {
                     lv_label_set_text_static(obj, "0:04");
                 }
                 {
+                    // track_duration
                     lv_obj_t *obj = lv_label_create(parent_obj);
-                    objects.obj10 = obj;
+                    objects.track_duration = obj;
                     lv_obj_set_pos(obj, 323, 142);
                     lv_obj_set_size(obj, LV_SIZE_CONTENT, LV_SIZE_CONTENT);
                     lv_obj_set_style_text_color(obj, lv_color_hex(0xffffff), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -251,8 +264,9 @@ void create_screen_ui_player() {
             }
         }
         {
+            // track_seek_slider
             lv_obj_t *obj = lv_slider_create(parent_obj);
-            objects.obj11 = obj;
+            objects.track_seek_slider = obj;
             lv_obj_set_pos(obj, 178, 166);
             lv_obj_set_size(obj, 358, 12);
             lv_slider_set_value(obj, 25, LV_ANIM_OFF);
