@@ -1,12 +1,10 @@
 #include <Arduino.h>
 #include "ui_events.h"
-#include "ui.h" // genere par SquareLine Studio : declare ui_player, ui_browser...
-#include "screens.h" // genere par SquareLine Studio : declare loadScreen()
-#include "images.h"  // genere par SquareLine Studio : declare img_skip_back, img_skip_next, img_play, img_pause...
+#include "ui.h"      // genere par SquareLine Studio : declare ui_player, ui_browser...
+#include "screens.h" // declare "objects" (objects.play_pause, objects.ttttest...)
+#include "images.h"  // declare img_play, img_pause...
 #include "playback/jukebox.h"
 #include "audio/audio_player.h"
-
-
 
 // Definis dans main.cpp
 extern Jukebox playback;
@@ -29,7 +27,7 @@ void action_play_pause_btn(lv_event_t *e)
     player.pauseResume();
 
     bool running = player.isRunning();
-    lv_img_set_src(objects.icon_play_pause, running ? &img_pause : &img_play);
+    lv_image_set_src(objects.icon_play_pause, running ? &img_pause : &img_play); // v9 : lv_img_set_src -> lv_image_set_src
 
     Serial.println(running ? "[Lecture]" : "[Pause]");
 }
@@ -76,7 +74,7 @@ void action_like_btn(lv_event_t *e)
 
 void action_gesture(lv_event_t *e)
 {
-    lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_get_act());
+    lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_active()); // v9 : lv_indev_get_act -> lv_indev_active
 
     switch (dir)
     {
@@ -84,8 +82,9 @@ void action_gesture(lv_event_t *e)
         if (currentScreen == UIScreen::NOW_PLAYING)
         {
             Serial.println("[Geste] LEFT -> Browser");
-            // lv_scr_load_anim(ui_browser, LV_SCR_LOAD_ANIM_MOVE_LEFT, 200, 0, false);
-            loadScreen(SCREEN_ID_UI_PLAYER);
+            // v9 : lv_scr_load_anim -> lv_screen_load_anim, LV_SCR_LOAD_ANIM_* -> LV_SCREEN_LOAD_ANIM_*
+            // lv_screen_load_anim(ui_browser, LV_SCREEN_LOAD_ANIM_MOVE_LEFT, 200, 0, false);
+            loadScreen(SCREEN_ID_UI_BROWSER);
             currentScreen = UIScreen::BROWSER;
         }
         break;
@@ -94,8 +93,8 @@ void action_gesture(lv_event_t *e)
         if (currentScreen == UIScreen::BROWSER)
         {
             Serial.println("[Geste] RIGHT -> Now Playing");
-            // lv_scr_load_anim(ui_player, LV_SCR_LOAD_ANIM_MOVE_RIGHT, 200, 0, false);
-            loadScreen(SCREEN_ID_UI_BROWSER);
+            // lv_screen_load_anim(ui_player, LV_SCREEN_LOAD_ANIM_MOVE_RIGHT, 200, 0, false);
+            loadScreen(SCREEN_ID_UI_PLAYER);
             currentScreen = UIScreen::NOW_PLAYING;
         }
         break;

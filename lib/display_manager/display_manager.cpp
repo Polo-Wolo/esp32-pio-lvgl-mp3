@@ -288,20 +288,20 @@
    Touch_Init();
  #endif
  
-   // Alloc draw buffers used by LVGL
-   // It's recommended to choose the size of the draw buffer(s) to be at least 1/10 screen sized
-   lv_color_t *buf1 = (lv_color_t*)heap_caps_malloc(EXAMPLE_LCD_H_RES * EXAMPLE_LVGL_BUF_HEIGHT * sizeof(lv_color_t), MALLOC_CAP_DMA);
-   if (buf1 == NULL) {
-       ESP_LOGE(TAG, "Failed to allocate LVGL buffer 1");
-       return ESP_ERR_NO_MEM;
-   }
-   
-   lv_color_t *buf2 = (lv_color_t*)heap_caps_malloc(EXAMPLE_LCD_H_RES * EXAMPLE_LVGL_BUF_HEIGHT * sizeof(lv_color_t), MALLOC_CAP_DMA);
-   if (buf2 == NULL) {
-       free(buf1);
-       ESP_LOGE(TAG, "Failed to allocate LVGL buffer 2");
-       return ESP_ERR_NO_MEM;
-   }
+    // Alloc draw buffers used by LVGL
+    // It's recommended to choose the size of the draw buffer(s) to be at least 1/10 screen sized
+    lv_color_t *buf1 = (lv_color_t*)heap_caps_malloc(EXAMPLE_LCD_H_RES * EXAMPLE_LVGL_BUF_HEIGHT * sizeof(lv_color_t), MALLOC_CAP_SPIRAM);
+    if (buf1 == NULL) {
+        ESP_LOGE(TAG, "Failed to allocate LVGL buffer 1");
+        return ESP_ERR_NO_MEM;
+    }
+    
+    lv_color_t *buf2 = (lv_color_t*)heap_caps_malloc(EXAMPLE_LCD_H_RES * EXAMPLE_LVGL_BUF_HEIGHT * sizeof(lv_color_t), MALLOC_CAP_SPIRAM);
+    if (buf2 == NULL) {
+        free(buf1);
+        ESP_LOGE(TAG, "Failed to allocate LVGL buffer 2");
+        return ESP_ERR_NO_MEM;
+    }
  
    ESP_LOGI(TAG, "Register display driver to LVGL");
    lv_display_set_user_data(disp, panel_handle);

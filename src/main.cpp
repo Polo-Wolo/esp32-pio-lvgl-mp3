@@ -1,80 +1,94 @@
-/**
- * @file main.cpp
- * @brief Minimal LVGL v9 test: bright background + one touch button.
- *        Used to isolate whether the black-screen issue is in the panel/flush
- *        path or in the LVGL object tree.
- */
-
 #include <Arduino.h>
+#include "esp_log.h"
 #include "display_manager.h"
-#include "lvgl.h"
+#include "ui.h" // UI header genere par SquareLine Studio
+
+#include "playback/jukebox.h"
+#include "sd/music_library.h"
+#include "audio/audio_player.h"
 
 static const char *TAG = "main";
 
-static void btn_event_cb(lv_event_t *e)
-{
-  lv_event_code_t code = lv_event_get_code(e);
-  if (code != LV_EVENT_CLICKED) {
-    return;
-  }
-
-  lv_obj_t *btn = (lv_obj_t *)lv_event_get_target(e);
-  lv_obj_t *label = lv_obj_get_child(btn, 0);
-
-  static uint32_t click_count = 0;
-  click_count++;
-
-  Serial.printf("[%s] Button clicked, count=%lu\n", TAG, (unsigned long)click_count);
-  lv_label_set_text_fmt(label, "Clicked: %lu", (unsigned long)click_count);
-}
+// Instances globales (referencees via "extern" dans ui_events.cpp)
+Jukebox playback;
+AudioPlayer player;
 
 void setup()
 {
   Serial.begin(115200);
-  delay(300);
-  Serial.println("Booting...");
+  ESP_LOGI(TAG, "Application starting...");
 
+  // Graine aleatoire pour le mode shuffle (sinon meme sequence a chaque boot)
+  randomSeed(esp_random());
+
+  Serial.printf("[Debug] Boot : Heap interne libre=%u | PSRAM libre=%u\n",
+                (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getFreePsram());
+
+  // IMPORTANT : on initialise l'I2S (audio) AVANT l'ecran/LVGL.
+  // L'I2S a besoin de RAM INTERNE (pas la PSRAM) pour ses descripteurs DMA.
+  // Si l'ecran/LVGL s'initialisent en premier et consomment toute la RAM
+  // interne disponible pour leurs buffers, l'I2S echoue a l'allocation
+  // (symptome observe : "i2s_alloc_dma_desc... allocate DMA buffer failed").
+  // En reservant sa (petite) part de RAM interne en tout premier, l'I2S
+  // s'initialise correctement avant que LVGL ne prenne le reste.
+  player.begin();
+  Serial.printf("[Debug] Apres player.begin() : Heap interne libre=%u | PSRAM libre=%u\n",
+                (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getFreePsram());
+
+  // Initialisation ecran + LVGL
   esp_err_t ret = display_init();
-  if (ret != ESP_OK) {
-    Serial.printf("display_init() FAILED: %d\n", ret);
-    return;
-  }
-  Serial.println("display_init() OK");
-
-  // display_init() already spins up its own FreeRTOS task (lvgl_port_task)
-  // which calls lv_timer_handler() in a loop, so any LVGL call made from
-  // setup()/loop() must be wrapped in display_lvgl_lock()/unlock() to avoid
-  // touching LVGL's non-thread-safe state from two tasks at once.
-  if (!display_lvgl_lock(-1)) {
-    Serial.println("Could not lock LVGL mutex");
+  if (ret != ESP_OK)
+  {
+    ESP_LOGE(TAG, "Display initialization failed with error: %d", ret);
     return;
   }
 
-  lv_obj_t *scr = lv_screen_active();
+  // Initialisation UI (SquareLine Studio)
+  if (display_lvgl_lock(-1))
+  {
+    ESP_LOGI(TAG, "Initializing UI");
+    ui_init();
+    display_lvgl_unlock();
+    ESP_LOGI(TAG, "UI initialization complete");
+  }
+  else
+  {
+    ESP_LOGE(TAG, "Failed to acquire LVGL mutex for UI initialization");
+    return;
+  }
 
-  // Deliberately loud, non-default color: if this never shows up on the
-  // panel, the problem is downstream of LVGL (flush / SPI / backlight),
-  // not a missing widget or a theme issue.
-  lv_obj_set_style_bg_color(scr, lv_color_hex(0x003a57), LV_PART_MAIN);
-  lv_obj_set_style_bg_opa(scr, LV_OPA_COVER, LV_PART_MAIN);
+  Serial.printf("[Debug] Apres ecran+UI : Heap interne libre=%u | PSRAM libre=%u\n",
+                (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getFreePsram());
 
-  lv_obj_t *btn = lv_button_create(scr);
-  lv_obj_set_size(btn, 160, 60);
-  lv_obj_center(btn);
-  lv_obj_add_event_cb(btn, btn_event_cb, LV_EVENT_CLICKED, NULL);
+  // Carte SD + bibliotheque musicale
+  if (!MusicLibrary::begin())
+  {
+    ESP_LOGE(TAG, "Echec montage carte SD");
+    return;
+  }
+  ESP_LOGI(TAG, "Carte SD montee");
 
-  lv_obj_t *label = lv_label_create(btn);
-  lv_label_set_text(label, "Touch me");
-  lv_obj_center(label);
+  const char *musicFolder = "/";
+  size_t added = MusicLibrary::loadFolder(playback, musicFolder, true);
+  ESP_LOGI(TAG, "%d piste(s) chargee(s) depuis %s", (int)added, musicFolder);
 
-  display_lvgl_unlock();
+  if (playback.empty())
+  {
+    ESP_LOGW(TAG, "Aucune piste trouvee sur la carte SD");
+    return;
+  }
 
-  Serial.println("UI created");
+  // Le Jukebox est pret, l'I2S deja initialise plus haut : on peut lancer la lecture
+  player.attachJukebox(playback);
+  player.playCurrent();
+
+  ESP_LOGI(TAG, "Setup complete");
 }
 
 void loop()
 {
-  // Nothing to do here: lvgl_port_task (started inside display_init())
-  // already handles lv_timer_handler() on its own schedule.
-  vTaskDelay(pdMS_TO_TICKS(1000));
+  // La tache LVGL gere l'affichage separement (voir display_manager).
+  // Ici on ne fait que faire avancer le decodeur audio.
+  player.loop();
+  vTaskDelay(pdMS_TO_TICKS(1));
 }
