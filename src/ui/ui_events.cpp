@@ -69,6 +69,23 @@ void action_like_btn(lv_event_t *e)
 }
 
 // ==================================================
+// SEEK : glisser le slider deplace la lecture
+// ==================================================
+
+void action_seek_slider_changed(lv_event_t *e)
+{
+    lv_obj_t *slider = (lv_obj_t *)lv_event_get_target(e);
+    int32_t value = lv_slider_get_value(slider); // en secondes (range = duree de la piste)
+
+    player.seekTo((uint32_t)value);
+
+    // NB: LV_EVENT_VALUE_CHANGED se declenche en continu pendant le glissement,
+    // donc seekTo() est appele plusieurs fois par seconde tant que le doigt bouge.
+    // Si ca provoque des saccades audio, remplacez LV_EVENT_VALUE_CHANGED par
+    // LV_EVENT_RELEASED dans EEZ Studio pour ne chercher qu'au relachement.
+}
+
+// ==================================================
 // GESTES : swipe gauche/droite = changer d'ecran
 // ==================================================
 

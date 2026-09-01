@@ -33,14 +33,26 @@ void updateNowPlayingUI()
     if (!display_lvgl_lock(10))
         return; // n'attend pas indefiniment si le mutex est pris
 
-    // --- Slider de progression : SEEK_SLIDER a remplacer par le vrai nom de votre objet ---
+    // --- Slider de progression ---
+    // Si l'utilisateur est en train de faire glisser le slider (LV_STATE_PRESSED),
+    // on ne touche pas a sa valeur : sinon l'auto-refresh (toutes les 250ms) se
+    // bat avec son doigt et le slider "saute" pendant le glissement.
+    bool userIsDragging = lv_obj_has_state(objects.track_seek_slider, LV_STATE_PRESSED);
+
     if (dur != lastDuration)
     {
         lv_slider_set_range(objects.track_seek_slider, 0, (int32_t)dur);
         lastDuration = dur;
     }
-    lv_slider_set_value(objects.track_seek_slider, (int32_t)cur, LV_ANIM_ON);
+    if (!userIsDragging)
+    {
+        lv_slider_set_value(objects.track_seek_slider, (int32_t)cur, LV_ANIM_ON);
+    }
     lastCurrent = cur;
+
+    // --- Temps ecoule / duree totale ---
+    lv_label_set_text_fmt(objects.track_current_time, "%02d:%02d", (int)(cur / 60), (int)(cur % 60));
+    lv_label_set_text_fmt(objects.track_duration, "%02d:%02d", (int)(dur / 60), (int)(dur % 60));
 
     // --- Textes ---
     if (track->title != lastTitle)

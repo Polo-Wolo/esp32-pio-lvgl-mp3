@@ -329,7 +329,7 @@
 #define LV_FONT_MONTSERRAT_10 0
 #define LV_FONT_MONTSERRAT_12 0
 #define LV_FONT_MONTSERRAT_14 1
-#define LV_FONT_MONTSERRAT_16 0
+#define LV_FONT_MONTSERRAT_16 1
 /* Enabled to match your v8 config (v9 default is 0) */
 #define LV_FONT_MONTSERRAT_18 1
 #define LV_FONT_MONTSERRAT_20 0

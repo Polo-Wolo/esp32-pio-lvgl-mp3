@@ -999,9 +999,9 @@
                   "objID": "d1710ad6-0f56-4929-e193-9b39fd6e3b97",
                   "type": "LVGLLabelWidget",
                   "left": 9,
-                  "top": 142,
-                  "width": 30,
-                  "height": 16,
+                  "top": 140,
+                  "width": 48,
+                  "height": 18,
                   "customInputs": [],
                   "customOutputs": [],
                   "style": {
@@ -1034,14 +1034,14 @@
                       "MAIN": {
                         "DEFAULT": {
                           "text_color": "#FFFFFF",
-                          "text_font": "MONTSERRAT_14"
+                          "text_font": "MONTSERRAT_16"
                         }
                       }
                     }
                   },
                   "group": "",
                   "groupIndex": 0,
-                  "text": "0:04",
+                  "text": "00:04",
                   "textType": "literal",
                   "longMode": "WRAP",
                   "recolor": false,
@@ -1050,10 +1050,10 @@
                 {
                   "objID": "6be53df9-cc2d-403e-9cf7-c00edb6c25e3",
                   "type": "LVGLLabelWidget",
-                  "left": 323,
-                  "top": 142,
-                  "width": 24,
-                  "height": 16,
+                  "left": 305,
+                  "top": 140,
+                  "width": 39,
+                  "height": 18,
                   "customInputs": [],
                   "customOutputs": [],
                   "style": {
@@ -1086,23 +1086,23 @@
                       "MAIN": {
                         "DEFAULT": {
                           "text_color": "#FFFFFF",
-                          "text_font": "MONTSERRAT_14"
+                          "text_font": "MONTSERRAT_16"
                         }
                       }
                     }
                   },
                   "group": "",
                   "groupIndex": 0,
-                  "text": "3:13",
+                  "text": "03:13",
                   "textType": "literal",
                   "longMode": "WRAP",
                   "recolor": false,
                   "useStaticText": true
                 }
               ],
-              "widgetFlags": "CLICK_FOCUSABLE|PRESS_LOCK|SCROLLABLE|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE",
+              "widgetFlags": "",
               "hiddenFlagType": "literal",
-              "clickableFlag": true,
+              "clickableFlag": false,
               "clickableFlagType": "literal",
               "flagScrollbarMode": "",
               "flagScrollDirection": "",
@@ -1121,7 +1121,8 @@
                       "bg_opa": 255,
                       "border_color": "#000000",
                       "border_width": 2,
-                      "border_side": "BOTTOM|LEFT"
+                      "border_side": "BOTTOM|LEFT",
+                      "width": 358
                     }
                   }
                 }
