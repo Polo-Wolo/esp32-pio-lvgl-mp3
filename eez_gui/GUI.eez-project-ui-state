@@ -1,7 +1,7 @@
 {
   "navigation": {
     "selectedUserPageObject": "[GUI.eez-project]:/userPages/0",
-    "selectedBitmapObject": "[GUI.eez-project]:/bitmaps/-1",
+    "selectedActionObject": "[GUI.eez-project]:/actions/3",
     "subnavigationSelectedItems": {
       "variables-tab/sub-navigation/selected-item": "Global"
     }
@@ -24,7 +24,7 @@
           },
           {
             "type": "border",
-            "selected": 2,
+            "selected": 1,
             "size": 240,
             "location": "right",
             "children": [
@@ -125,6 +125,7 @@
                   "type": "tabset",
                   "id": "#c8490e78-3e2e-481f-ae91-6904fc6e692a",
                   "weight": 1,
+                  "selected": 1,
                   "enableClose": false,
                   "children": [
                     {
@@ -1059,7 +1060,11 @@
       "selectionBack": {
         "0": {
           "0": {},
-          "2": {},
+          "2": {
+            "0": {
+              "$selected": true
+            }
+          },
           "4": {},
           "6": {}
         }
@@ -1111,7 +1116,10 @@
   "lvglPart": "MAIN",
   "lvglState": "DEFAULT",
   "lvglExpandedPropertiesGroup": [
-    "BACKGROUND"
+    "BACKGROUND",
+    "TEXT",
+    "POSITION AND SIZE",
+    "MISCELLANEOUS"
   ],
   "showInactiveFlowsInDebugger": true,
   "globalFlowZoom": true,
