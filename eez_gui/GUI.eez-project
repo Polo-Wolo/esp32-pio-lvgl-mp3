@@ -143,7 +143,25 @@
       "name": "like_btn"
     },
     {
-      "objID": "79498d37-6db0-430e-8373-044a7c13f6e0",
+      "objID": "fe4bc1ff-3b43-44e5-cf40-69bab64d0385",
+      "components": [],
+      "connectionLines": [],
+      "localVariables": [],
+      "componentGroups": [],
+      "userProperties": [],
+      "name": "gesture_player"
+    },
+    {
+      "objID": "95d05335-4201-4734-a475-f20ebe387027",
+      "components": [],
+      "connectionLines": [],
+      "localVariables": [],
+      "componentGroups": [],
+      "userProperties": [],
+      "name": "gesture_page"
+    },
+    {
+      "objID": "0f2a6776-aee5-4c84-baf9-b418775e7189",
       "components": [],
       "connectionLines": [],
       "localVariables": [],
@@ -172,15 +190,7 @@
             "childStyles": []
           },
           "timeline": [],
-          "eventHandlers": [
-            {
-              "objID": "e92beaa5-ed8a-422c-a041-f62c9ac8ec76",
-              "eventName": "GESTURE",
-              "handlerType": "action",
-              "action": "gesture",
-              "userData": 0
-            }
-          ],
+          "eventHandlers": [],
           "leftUnit": "px",
           "topUnit": "px",
           "widthUnit": "px",
@@ -762,7 +772,15 @@
               },
               "locked": false,
               "timeline": [],
-              "eventHandlers": [],
+              "eventHandlers": [
+                {
+                  "objID": "a2edd8cb-094c-4a17-ff69-e0515713d36a",
+                  "eventName": "GESTURE",
+                  "handlerType": "action",
+                  "action": "gesture_page",
+                  "userData": 0
+                }
+              ],
               "identifier": "track_iimage",
               "leftUnit": "px",
               "topUnit": "px",
@@ -823,10 +841,10 @@
               "timeline": [],
               "eventHandlers": [
                 {
-                  "objID": "ae0b0f2a-f116-4ee7-a2d1-65af9c90cf70",
+                  "objID": "13ee9585-c2db-4c83-fe4e-3188cf03b80f",
                   "eventName": "GESTURE",
                   "handlerType": "action",
-                  "action": "gesture",
+                  "action": "gesture_player",
                   "userData": 0
                 }
               ],
@@ -1100,9 +1118,9 @@
                   "useStaticText": true
                 }
               ],
-              "widgetFlags": "",
+              "widgetFlags": "GESTURE_BUBBLE",
               "hiddenFlagType": "literal",
-              "clickableFlag": false,
+              "clickableFlag": true,
               "clickableFlagType": "literal",
               "flagScrollbarMode": "",
               "flagScrollDirection": "",
@@ -1262,8 +1280,8 @@
               "objID": "fe27c3c8-41a2-4cc8-b13f-49e39cc0de69",
               "eventName": "GESTURE",
               "handlerType": "action",
-              "action": "gesture",
-              "userData": 0
+              "action": "gesture_page",
+              "userData": 1
             }
           ],
           "leftUnit": "px",

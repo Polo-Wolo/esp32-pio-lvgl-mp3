@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include "ui_events.h"
 #include "ui.h"      // genere par SquareLine Studio : declare ui_player, ui_browser...
+#include "actions.h" // declare action_play_pause_btn, action_next_btn...
 #include "screens.h" // declare "objects" (objects.play_pause, objects.ttttest...)
 #include "images.h"  // declare img_play, img_pause...
 #include "playback/jukebox.h"
@@ -86,8 +87,79 @@ void action_seek_slider_changed(lv_event_t *e)
 }
 
 // ==================================================
-// GESTES : swipe gauche/droite = changer d'ecran
+// GESTES PAGE : swipe gauche/droite = changer d'ecran
 // ==================================================
+void action_gesture_page(lv_event_t *e)
+{
+    lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_active()); // v9 : lv_indev_get_act -> lv_indev_active
+
+    switch (dir)
+    {
+    case LV_DIR_LEFT:
+        if (currentScreen == UIScreen::NOW_PLAYING)
+        {
+            Serial.println("[Geste] LEFT -> Browser");
+            // v9 : lv_scr_load_anim -> lv_screen_load_anim, LV_SCR_LOAD_ANIM_* -> LV_SCREEN_LOAD_ANIM_*
+            // lv_screen_load_anim(ui_browser, LV_SCREEN_LOAD_ANIM_MOVE_LEFT, 200, 0, false);
+            loadScreen(SCREEN_ID_UI_BROWSER);
+            currentScreen = UIScreen::BROWSER;
+        }
+        break;
+
+    case LV_DIR_RIGHT:
+        if (currentScreen == UIScreen::BROWSER)
+        {
+            Serial.println("[Geste] RIGHT -> Now Playing");
+            // lv_screen_load_anim(ui_player, LV_SCREEN_LOAD_ANIM_MOVE_RIGHT, 200, 0, false);
+            loadScreen(SCREEN_ID_UI_PLAYER);
+            currentScreen = UIScreen::NOW_PLAYING;
+        }
+        break;
+
+    default:
+        break;
+    }
+}
+
+void action_gesture_player(lv_event_t *e)
+{
+    lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_active()); // v9 : lv_indev_get_act -> lv_indev_active
+    const Music *track = playback.current();
+
+    switch (dir)
+    {
+    case LV_DIR_LEFT:
+        Serial.println("[Geste] LEFT -> Next track");
+        player.next();
+        if (track)
+            Serial.printf("[Next] %s\n", track->title.c_str());
+
+        break;
+
+    case LV_DIR_RIGHT:
+        Serial.println("[Geste] RIGHT -> Previous track");
+        player.previous();
+        if (track)
+            Serial.printf("[Previous] %s\n", track->title.c_str());
+
+        break;
+
+    case LV_DIR_TOP:
+        Serial.println("[Geste] TOP -> volume +");
+        if (player.getVolume() < 21)
+            player.setVolume(player.getVolume() + 1);
+        break;
+
+    case LV_DIR_BOTTOM:
+        Serial.println("[Geste] BOTTOM -> volume -");
+        if (player.getVolume() > 0)
+            player.setVolume(player.getVolume() - 1);
+        break;
+
+    default:
+        break;
+    }
+}
 
 void action_gesture(lv_event_t *e)
 {

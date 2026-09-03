@@ -1,7 +1,7 @@
 {
   "navigation": {
     "selectedUserPageObject": "[GUI.eez-project]:/userPages/0",
-    "selectedActionObject": "[GUI.eez-project]:/actions/3",
+    "selectedActionObject": "[GUI.eez-project]:/actions/0",
     "subnavigationSelectedItems": {
       "variables-tab/sub-navigation/selected-item": "Global"
     }
@@ -125,7 +125,6 @@
                   "type": "tabset",
                   "id": "#c8490e78-3e2e-481f-ae91-6904fc6e692a",
                   "weight": 1,
-                  "selected": 1,
                   "enableClose": false,
                   "children": [
                     {
@@ -192,10 +191,21 @@
               "type": "tabset",
               "id": "EDITORS",
               "weight": 52.78611632270169,
-              "selected": 1,
+              "selected": 2,
               "enableDeleteWhenEmpty": false,
               "enableClose": false,
               "children": [
+                {
+                  "type": "tab",
+                  "id": "#455c2e34-6faf-4d55-8e00-b8bcfc4f5225",
+                  "name": "ui_browser",
+                  "component": "editor",
+                  "config": {
+                    "objectPath": "[GUI.eez-project]:/userPages/1",
+                    "permanent": false
+                  },
+                  "icon": "svg:page"
+                },
                 {
                   "type": "tab",
                   "id": "#bb9d2062-fcc4-4f13-8dac-31d5006ee050",
@@ -215,7 +225,7 @@
                   "component": "editor",
                   "config": {
                     "objectPath": "[GUI.eez-project]:/userPages/0",
-                    "permanent": false
+                    "permanent": true
                   },
                   "icon": "svg:page"
                 }
@@ -1061,12 +1071,12 @@
         "0": {
           "0": {},
           "2": {
-            "0": {
-              "$selected": true
-            }
+            "0": {}
           },
           "4": {},
-          "6": {}
+          "6": {
+            "$selected": true
+          }
         }
       },
       "transform": {
@@ -1085,7 +1095,9 @@
     },
     "[GUI.eez-project]:/userPages/1[flow-state]": {
       "selectionFront": {},
-      "selectionBack": {},
+      "selectionBack": {
+        "0": {}
+      },
       "transform": {
         "translate": {
           "x": -268,

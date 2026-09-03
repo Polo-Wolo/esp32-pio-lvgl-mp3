@@ -29,7 +29,6 @@ void create_screen_ui_player() {
     objects.ui_player = obj;
     lv_obj_set_pos(obj, 0, 0);
     lv_obj_set_size(obj, 536, 240);
-    lv_obj_add_event_cb(obj, action_gesture, LV_EVENT_GESTURE, (void *)0);
     {
         lv_obj_t *parent_obj = obj;
         {
@@ -174,6 +173,7 @@ void create_screen_ui_player() {
             objects.track_iimage = obj;
             lv_obj_set_pos(obj, 0, 0);
             lv_obj_set_size(obj, 178, 178);
+            lv_obj_add_event_cb(obj, action_gesture_page, LV_EVENT_GESTURE, (void *)0);
             lv_obj_set_style_bg_color(obj, lv_color_hex(0x4a79f2), LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_pad_top(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_pad_bottom(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -198,8 +198,8 @@ void create_screen_ui_player() {
             lv_obj_set_style_pad_right(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_pad_bottom(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_radius(obj, 0, LV_PART_MAIN | LV_STATE_DEFAULT);
-            lv_obj_add_event_cb(obj, action_gesture, LV_EVENT_GESTURE, (void *)0);
-            lv_obj_remove_flag(obj, LV_OBJ_FLAG_CLICKABLE|LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_GESTURE_BUBBLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
+            lv_obj_add_event_cb(obj, action_gesture_player, LV_EVENT_GESTURE, (void *)0);
+            lv_obj_remove_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_PRESS_LOCK|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
             lv_obj_set_style_bg_color(obj, lv_color_hex(0x181818), LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_bg_opa(obj, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
             lv_obj_set_style_border_color(obj, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -304,7 +304,7 @@ void create_screen_ui_browser() {
     objects.ui_browser = obj;
     lv_obj_set_pos(obj, 0, 0);
     lv_obj_set_size(obj, 536, 240);
-    lv_obj_add_event_cb(obj, action_gesture, LV_EVENT_GESTURE, (void *)0);
+    lv_obj_add_event_cb(obj, action_gesture_page, LV_EVENT_GESTURE, (void *)1);
     {
         lv_obj_t *parent_obj = obj;
         {
