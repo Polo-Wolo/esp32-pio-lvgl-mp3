@@ -168,6 +168,15 @@
       "componentGroups": [],
       "userProperties": [],
       "name": "gesture"
+    },
+    {
+      "objID": "f864bfc3-661d-4f40-92fa-4a13cad86b7f",
+      "components": [],
+      "connectionLines": [],
+      "localVariables": [],
+      "componentGroups": [],
+      "userProperties": [],
+      "name": "screen_pressed"
     }
   ],
   "userPages": [
@@ -190,7 +199,22 @@
             "childStyles": []
           },
           "timeline": [],
-          "eventHandlers": [],
+          "eventHandlers": [
+            {
+              "objID": "3cf3127d-d1c7-4ee0-fb25-02c0aaf7de7f",
+              "eventName": "PRESSED",
+              "handlerType": "action",
+              "action": "screen_pressed",
+              "userData": 0
+            },
+            {
+              "objID": "ae8f5a06-7faa-4a2b-bfcf-4d60b3f3ab8b",
+              "eventName": "GESTURE",
+              "handlerType": "action",
+              "action": "gesture_page",
+              "userData": 0
+            }
+          ],
           "leftUnit": "px",
           "topUnit": "px",
           "widthUnit": "px",
@@ -772,22 +796,14 @@
               },
               "locked": false,
               "timeline": [],
-              "eventHandlers": [
-                {
-                  "objID": "a2edd8cb-094c-4a17-ff69-e0515713d36a",
-                  "eventName": "GESTURE",
-                  "handlerType": "action",
-                  "action": "gesture_page",
-                  "userData": 0
-                }
-              ],
+              "eventHandlers": [],
               "identifier": "track_iimage",
               "leftUnit": "px",
               "topUnit": "px",
               "widthUnit": "px",
               "heightUnit": "px",
               "children": [],
-              "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLLABLE|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE",
+              "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLLABLE|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE|EVENT_BUBBLE",
               "hiddenFlagType": "literal",
               "clickableFlag": true,
               "clickableFlagType": "literal",
@@ -839,15 +855,7 @@
                 "childStyles": []
               },
               "timeline": [],
-              "eventHandlers": [
-                {
-                  "objID": "13ee9585-c2db-4c83-fe4e-3188cf03b80f",
-                  "eventName": "GESTURE",
-                  "handlerType": "action",
-                  "action": "gesture_player",
-                  "userData": 0
-                }
-              ],
+              "eventHandlers": [],
               "leftUnit": "px",
               "topUnit": "px",
               "widthUnit": "px",
@@ -1231,7 +1239,7 @@
               "enableAnimation": false
             }
           ],
-          "widgetFlags": "CLICKABLE|PRESS_LOCK|CLICK_FOCUSABLE|GESTURE_BUBBLE|SNAPPABLE|SCROLLABLE|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER",
+          "widgetFlags": "CLICKABLE|SCROLLABLE",
           "hiddenFlagType": "literal",
           "clickableFlag": true,
           "clickableFlagType": "literal",

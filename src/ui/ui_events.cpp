@@ -86,6 +86,16 @@ void action_seek_slider_changed(lv_event_t *e)
     // LV_EVENT_RELEASED dans EEZ Studio pour ne chercher qu'au relachement.
 }
 
+static lv_point_t gesture_start_point;
+
+void action_screen_pressed(lv_event_t *e)
+{
+    Serial.println("[Geste] Pressed");
+    // lv_indev_t *indev = lv_indev_active();
+    // lv_indev_get_point(indev, &gesture_start_point);
+    // Serial.printf("[Geste] Pressed at (%d, %d)\n", gesture_start_point.x, gesture_start_point.y);
+}
+
 // ==================================================
 // GESTES PAGE : swipe gauche/droite = changer d'ecran
 // ==================================================

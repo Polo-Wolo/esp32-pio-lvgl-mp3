@@ -1,7 +1,7 @@
 {
   "navigation": {
     "selectedUserPageObject": "[GUI.eez-project]:/userPages/0",
-    "selectedActionObject": "[GUI.eez-project]:/actions/0",
+    "selectedActionObject": "[GUI.eez-project]:/actions/6",
     "subnavigationSelectedItems": {
       "variables-tab/sub-navigation/selected-item": "Global"
     }
@@ -1074,15 +1074,13 @@
             "0": {}
           },
           "4": {},
-          "6": {
-            "$selected": true
-          }
+          "6": {}
         }
       },
       "transform": {
         "translate": {
-          "x": -203.35227272727286,
-          "y": -179.71363182176196
+          "x": -198.35227391936576,
+          "y": -236.3802937995299
         },
         "scale": 0.9
       },
