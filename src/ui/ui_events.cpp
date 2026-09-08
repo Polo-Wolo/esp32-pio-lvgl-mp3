@@ -94,6 +94,12 @@ void action_screen_pressed(lv_event_t *e)
     // lv_indev_t *indev = lv_indev_active();
     // lv_indev_get_point(indev, &gesture_start_point);
     // Serial.printf("[Geste] Pressed at (%d, %d)\n", gesture_start_point.x, gesture_start_point.y);
+    int data = (int)lv_event_get_user_data(e);
+    Serial.printf("[Geste] Pressed : user_data = %d\n", data);
+    if(data == 1)
+        Serial.println("[Geste] Pressed : Player");
+    else 
+        Serial.println("[Geste] Pressed : Page");
 }
 
 // ==================================================
@@ -101,34 +107,12 @@ void action_screen_pressed(lv_event_t *e)
 // ==================================================
 void action_gesture_page(lv_event_t *e)
 {
-    lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_active()); // v9 : lv_indev_get_act -> lv_indev_active
-
-    switch (dir)
-    {
-    case LV_DIR_LEFT:
-        if (currentScreen == UIScreen::NOW_PLAYING)
-        {
-            Serial.println("[Geste] LEFT -> Browser");
-            // v9 : lv_scr_load_anim -> lv_screen_load_anim, LV_SCR_LOAD_ANIM_* -> LV_SCREEN_LOAD_ANIM_*
-            // lv_screen_load_anim(ui_browser, LV_SCREEN_LOAD_ANIM_MOVE_LEFT, 200, 0, false);
-            loadScreen(SCREEN_ID_UI_BROWSER);
-            currentScreen = UIScreen::BROWSER;
-        }
-        break;
-
-    case LV_DIR_RIGHT:
-        if (currentScreen == UIScreen::BROWSER)
-        {
-            Serial.println("[Geste] RIGHT -> Now Playing");
-            // lv_screen_load_anim(ui_player, LV_SCREEN_LOAD_ANIM_MOVE_RIGHT, 200, 0, false);
-            loadScreen(SCREEN_ID_UI_PLAYER);
-            currentScreen = UIScreen::NOW_PLAYING;
-        }
-        break;
-
-    default:
-        break;
-    }
+    Serial.println("[Geste] Page");
+    int data = (int)lv_event_get_user_data(e);
+    if(data == 1)
+        Serial.println("[Geste] Gesture : Player");
+    else 
+        Serial.println("[Geste] Gesture : Page");
 }
 
 void action_gesture_player(lv_event_t *e)

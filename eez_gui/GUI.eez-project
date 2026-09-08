@@ -199,22 +199,7 @@
             "childStyles": []
           },
           "timeline": [],
-          "eventHandlers": [
-            {
-              "objID": "3cf3127d-d1c7-4ee0-fb25-02c0aaf7de7f",
-              "eventName": "PRESSED",
-              "handlerType": "action",
-              "action": "screen_pressed",
-              "userData": 0
-            },
-            {
-              "objID": "ae8f5a06-7faa-4a2b-bfcf-4d60b3f3ab8b",
-              "eventName": "GESTURE",
-              "handlerType": "action",
-              "action": "gesture_page",
-              "userData": 0
-            }
-          ],
+          "eventHandlers": [],
           "leftUnit": "px",
           "topUnit": "px",
           "widthUnit": "px",
@@ -796,14 +781,29 @@
               },
               "locked": false,
               "timeline": [],
-              "eventHandlers": [],
+              "eventHandlers": [
+                {
+                  "objID": "fd099f32-56e4-4847-bc8d-a68c2bdd4f9f",
+                  "eventName": "PRESSED",
+                  "handlerType": "action",
+                  "action": "screen_pressed",
+                  "userData": 0
+                },
+                {
+                  "objID": "2d319f14-42e9-4cf3-e305-e0787b5e5e24",
+                  "eventName": "GESTURE",
+                  "handlerType": "action",
+                  "action": "gesture_page",
+                  "userData": 0
+                }
+              ],
               "identifier": "track_iimage",
               "leftUnit": "px",
               "topUnit": "px",
               "widthUnit": "px",
               "heightUnit": "px",
               "children": [],
-              "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLLABLE|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE|EVENT_BUBBLE",
+              "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|EVENT_BUBBLE",
               "hiddenFlagType": "literal",
               "clickableFlag": true,
               "clickableFlagType": "literal",
@@ -855,7 +855,22 @@
                 "childStyles": []
               },
               "timeline": [],
-              "eventHandlers": [],
+              "eventHandlers": [
+                {
+                  "objID": "d1722783-4596-43cf-feaf-6ccaab6fabb3",
+                  "eventName": "PRESSED",
+                  "handlerType": "action",
+                  "action": "screen_pressed",
+                  "userData": 1
+                },
+                {
+                  "objID": "035238bc-b772-4ee5-9f90-86318ad2903f",
+                  "eventName": "GESTURE",
+                  "handlerType": "action",
+                  "action": "gesture_page",
+                  "userData": 1
+                }
+              ],
               "leftUnit": "px",
               "topUnit": "px",
               "widthUnit": "px",
@@ -1126,7 +1141,7 @@
                   "useStaticText": true
                 }
               ],
-              "widgetFlags": "GESTURE_BUBBLE",
+              "widgetFlags": "GESTURE_BUBBLE|CLICK_FOCUSABLE|EVENT_BUBBLE|PRESS_LOCK",
               "hiddenFlagType": "literal",
               "clickableFlag": true,
               "clickableFlagType": "literal",
@@ -1179,7 +1194,7 @@
               "widthUnit": "px",
               "heightUnit": "px",
               "children": [],
-              "widgetFlags": "CLICK_FOCUSABLE|GESTURE_BUBBLE|PRESS_LOCK|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_WITH_ARROW|SNAPPABLE",
+              "widgetFlags": "CLICK_FOCUSABLE|PRESS_LOCK",
               "hiddenFlagType": "literal",
               "clickableFlag": true,
               "clickableFlagType": "literal",
@@ -1239,7 +1254,7 @@
               "enableAnimation": false
             }
           ],
-          "widgetFlags": "CLICKABLE|SCROLLABLE",
+          "widgetFlags": "CLICKABLE|GESTURE_BUBBLE|EVENT_BUBBLE|PRESS_LOCK",
           "hiddenFlagType": "literal",
           "clickableFlag": true,
           "clickableFlagType": "literal",
@@ -1519,7 +1534,7 @@
               "groupIndex": 0
             }
           ],
-          "widgetFlags": "CLICKABLE|PRESS_LOCK|CLICK_FOCUSABLE|GESTURE_BUBBLE|SNAPPABLE|SCROLLABLE|SCROLL_ELASTIC|SCROLL_MOMENTUM|SCROLL_CHAIN_HOR|SCROLL_CHAIN_VER",
+          "widgetFlags": "CLICKABLE|PRESS_LOCK|GESTURE_BUBBLE|EVENT_BUBBLE",
           "hiddenFlagType": "literal",
           "clickableFlag": true,
           "clickableFlagType": "literal",
