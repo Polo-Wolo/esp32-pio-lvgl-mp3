@@ -10,10 +10,9 @@ extern "C" {
 extern void action_next_btn(lv_event_t * e);
 extern void action_play_pause_btn(lv_event_t * e);
 extern void action_like_btn(lv_event_t * e);
-extern void action_gesture_player(lv_event_t * e);
-extern void action_gesture_page(lv_event_t * e);
 extern void action_gesture(lv_event_t * e);
-extern void action_screen_pressed(lv_event_t * e);
+extern void action_child_pressed(lv_event_t * e);
+extern void action_child_clicked(lv_event_t * e);
 
 #ifdef __cplusplus
 }

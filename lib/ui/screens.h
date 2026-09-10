@@ -19,6 +19,13 @@ enum ScreensEnum {
 typedef struct _objects_t {
     lv_obj_t *ui_player;
     lv_obj_t *ui_browser;
+    lv_obj_t *track_image;
+    lv_obj_t *track_infos;
+    lv_obj_t *track_text;
+    lv_obj_t *artist_text;
+    lv_obj_t *album_text;
+    lv_obj_t *track_current_time;
+    lv_obj_t *track_duration;
     lv_obj_t *previous;
     lv_obj_t *icon_previous;
     lv_obj_t *next;
@@ -27,13 +34,6 @@ typedef struct _objects_t {
     lv_obj_t *icon_play_pause;
     lv_obj_t *music_mode;
     lv_obj_t *obj0;
-    lv_obj_t *track_iimage;
-    lv_obj_t *obj1;
-    lv_obj_t *track_text;
-    lv_obj_t *artist_text;
-    lv_obj_t *album_text;
-    lv_obj_t *track_current_time;
-    lv_obj_t *track_duration;
     lv_obj_t *track_seek_slider;
 } objects_t;
 
