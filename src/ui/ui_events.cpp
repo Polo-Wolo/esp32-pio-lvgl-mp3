@@ -176,15 +176,15 @@ void handle_browser_gesture(lv_dir_t dir)
     case LV_DIR_LEFT:
         if (currentScreen == UIScreen::UIScreenBrowser)
         {
-            loadScreen(SCREEN_ID_UI_PLAYER);
             currentScreen = UIScreen::UIScreenPlayer;
+            loadScreen(SCREEN_ID_UI_PLAYER);
         }
         break;
     case LV_DIR_RIGHT:
         if (currentScreen == UIScreen::UIScreenPlayer)
         {
-            loadScreen(SCREEN_ID_UI_BROWSER);
             currentScreen = UIScreen::UIScreenBrowser;
+            loadScreen(SCREEN_ID_UI_BROWSER);
         }
         break;
     default:
@@ -194,16 +194,24 @@ void handle_browser_gesture(lv_dir_t dir)
 
 void action_gesture(lv_event_t *e)
 {
-    lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_active()); // v9 : lv_indev_get_act -> lv_indev_active
+    lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_active());
 
-    switch (currentChild)
+    if (currentScreen == UIScreen::UIScreenBrowser)
     {
-    case UiChild::UiChildTrackImage:
         handle_browser_gesture(dir);
-        break;
-    case UiChild::UiChildTrackInfos:
-        handle_player_gesture(dir);
-        break;
+    }
+    else if (currentScreen == UIScreen::UIScreenPlayer)
+    {
+        // For Player screen
+        switch (currentChild)
+        {
+        case UiChild::UiChildTrackImage:
+            handle_browser_gesture(dir);
+            break;
+        case UiChild::UiChildTrackInfos:
+            handle_player_gesture(dir);
+            break;
+        }
     }
 }
 
