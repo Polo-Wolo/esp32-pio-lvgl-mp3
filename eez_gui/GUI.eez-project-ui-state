@@ -1,8 +1,7 @@
 {
   "navigation": {
     "selectedUserPageObject": "[GUI.eez-project]:/userPages/0",
-    "selectedActionObject": "[GUI.eez-project]:/actions/-1",
-    "selectedEnumObject": "[GUI.eez-project]:/variables/enums/-1",
+    "selectedBitmapObject": "[GUI.eez-project]:/bitmaps/3",
     "subnavigationSelectedItems": {
       "variables-tab/sub-navigation/selected-item": "Enums"
     }
@@ -25,7 +24,7 @@
           },
           {
             "type": "border",
-            "selected": 1,
+            "selected": 2,
             "size": 240,
             "location": "right",
             "children": [
@@ -125,7 +124,7 @@
                 {
                   "type": "tabset",
                   "id": "#c8490e78-3e2e-481f-ae91-6904fc6e692a",
-                  "weight": 1,
+                  "weight": 0.9425948604030796,
                   "enableClose": false,
                   "children": [
                     {
@@ -157,7 +156,7 @@
                 {
                   "type": "tabset",
                   "id": "#8bafb805-8a80-4d47-9091-2333adf4eb7c",
-                  "weight": 1,
+                  "weight": 1.258318381606053,
                   "enableClose": false,
                   "children": [
                     {
@@ -173,7 +172,7 @@
                 {
                   "type": "tabset",
                   "id": "#db29b17e-af9a-4387-973a-8261a677ed5d",
-                  "weight": 1,
+                  "weight": 0.7990867579908676,
                   "enableClose": false,
                   "children": [
                     {
@@ -1069,14 +1068,20 @@
     "[GUI.eez-project]:/userPages/0[flow-state]": {
       "selectionFront": {},
       "selectionBack": {
-        "0": {}
+        "0": {
+          "0": {
+            "0": {}
+          },
+          "2": {},
+          "3": {}
+        }
       },
       "transform": {
         "translate": {
-          "x": -198.35227391936576,
-          "y": -236.3802937995299
+          "x": -301.77804999623316,
+          "y": -180.0339578384525
         },
-        "scale": 0.9
+        "scale": 1.25
       },
       "timeline": {
         "isEditorActive": false,
@@ -1095,7 +1100,7 @@
           "x": -268,
           "y": -120
         },
-        "scale": 0.9
+        "scale": 1.25
       },
       "timeline": {
         "isEditorActive": false,
@@ -1121,12 +1126,14 @@
   "lvglState": "DEFAULT",
   "lvglExpandedPropertiesGroup": [
     "BACKGROUND",
-    "TEXT",
     "POSITION AND SIZE",
+    "PADDING",
+    "BORDER",
     "MISCELLANEOUS"
   ],
   "showInactiveFlowsInDebugger": true,
   "globalFlowZoom": true,
-  "flowZoom": 0.9,
-  "implementationLanguage": "C"
+  "flowZoom": 1.25,
+  "implementationLanguage": "C",
+  "openDialogDefaultPath": "C:\\Users\\polow\\Documents\\ESP32\\esp32-pio-lvgl-mp3\\eez_gui\\svg\\music.png"
 }

@@ -640,7 +640,6 @@
                     "DEFAULT": {
                       "radius": 0,
                       "shadow_opa": 0,
-                      "bg_color": "#fefefe",
                       "bg_opa": 0,
                       "width": 60,
                       "height": 60
@@ -745,11 +744,12 @@
                 "definition": {
                   "MAIN": {
                     "DEFAULT": {
-                      "bg_color": "#181818",
                       "radius": 0,
                       "shadow_opa": 0,
                       "width": 60,
-                      "height": 60
+                      "height": 60,
+                      "bg_opa": 0,
+                      "bg_color": "#2196f3"
                     },
                     "PRESSED": {
                       "transform_width": 0,
@@ -963,7 +963,8 @@
             "definition": {
               "MAIN": {
                 "DEFAULT": {
-                  "bg_color": "#181818"
+                  "bg_color": "#000000",
+                  "bg_opa": 255
                 }
               }
             }
