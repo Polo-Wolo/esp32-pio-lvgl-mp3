@@ -7,6 +7,8 @@
 #include "playback/jukebox.h"
 #include "audio/audio_player.h"
 
+#define DEBUG_UI_EVENTS 0
+
 // Definis dans main.cpp
 extern Jukebox playback;
 extern AudioPlayer player;
@@ -14,8 +16,8 @@ extern AudioPlayer player;
 // Ecran actuellement affiche, pour savoir dans quel sens naviguer au swipe
 enum class UIScreen
 {
-    NOW_PLAYING,
-    BROWSER
+    UIScreenPlayer,
+    UIScreenBrowser
 };
 
 enum class UiChild
@@ -27,7 +29,7 @@ enum class UiChild
 };
 
 UiChild currentChild = UiChild::UiChildNone;
-static UIScreen currentScreen = UIScreen::NOW_PLAYING;
+static UIScreen currentScreen = UIScreen::UIScreenPlayer;
 
 // ==================================================
 // BOUTONS DE LECTURE
@@ -40,7 +42,8 @@ void action_play_pause_btn(lv_event_t *e)
     bool running = player.isRunning();
     lv_image_set_src(objects.icon_play_pause, running ? &img_pause : &img_play); // v9 : lv_img_set_src -> lv_image_set_src
 
-    Serial.println(running ? "[Lecture]" : "[Pause]");
+    if (DEBUG_UI_EVENTS)
+        Serial.println(running ? "[Lecture]" : "[Pause]");
 }
 
 void action_next_btn(lv_event_t *e)
@@ -48,7 +51,10 @@ void action_next_btn(lv_event_t *e)
     player.next();
     const Music *track = playback.current();
     if (track)
-        Serial.printf("[Next] %s\n", track->title.c_str());
+    {
+        if (DEBUG_UI_EVENTS)
+            Serial.printf("[Next] %s\n", track->title.c_str());
+    }
 }
 
 void action_prev_btn(lv_event_t *e)
@@ -56,7 +62,10 @@ void action_prev_btn(lv_event_t *e)
     player.previous();
     const Music *track = playback.current();
     if (track)
-        Serial.printf("[Prev] %s\n", track->title.c_str());
+    {
+        if (DEBUG_UI_EVENTS)
+            Serial.printf("[Prev] %s\n", track->title.c_str());
+    }
 }
 
 void action_shuffle_btn(lv_event_t *e)
@@ -76,7 +85,10 @@ void action_like_btn(lv_event_t *e)
     // TODO : brancher sur une future gestion de favoris/playlists (.m3u)
     const Music *track = playback.current();
     if (track)
-        Serial.printf("[Like] %s\n", track->title.c_str());
+    {
+        if (DEBUG_UI_EVENTS)
+            Serial.printf("[Like] %s\n", track->title.c_str());
+    }
 }
 
 // ==================================================
@@ -96,8 +108,7 @@ void action_seek_slider_changed(lv_event_t *e)
     // LV_EVENT_RELEASED dans EEZ Studio pour ne chercher qu'au relachement.
 }
 
-
-const char* childToString(UiChild child)
+const char *childToString(UiChild child)
 {
     switch (child)
     {
@@ -115,37 +126,84 @@ const char* childToString(UiChild child)
 void action_child_pressed(lv_event_t *e)
 {
     int data = (int)lv_event_get_user_data(e);
-    if(data >=0 && data < (int)UiChild::UiChildCount)
+    if (data >= 0 && data < (int)UiChild::UiChildCount)
         currentChild = (UiChild)data;
     else
         currentChild = UiChild::UiChildNone;
-    
-    Serial.printf("[CHILD] Current Child : %s\n", childToString(currentChild));
+    if (DEBUG_UI_EVENTS)
+        Serial.printf("[CHILD] Current Child : %s\n", childToString(currentChild));
 }
 
 void action_child_clicked(lv_event_t *e)
 {
     currentChild = UiChild::UiChildNone;
-    Serial.printf("[CHILD] RESET : %s\n", childToString(currentChild));
+    if (DEBUG_UI_EVENTS)
+        Serial.printf("[CHILD] RESET : %s\n", childToString(currentChild));
 }
-
-
 
 // ==================================================
 // GESTES PAGE : swipe gauche/droite = changer d'ecran
 // ==================================================
+void handle_player_gesture(lv_dir_t dir)
+{
+    switch (dir)
+    {
+    case LV_DIR_LEFT:
+        action_next_btn(nullptr);
+        break;
+
+    case LV_DIR_RIGHT:
+        action_prev_btn(nullptr);
+        break;
+
+    case LV_DIR_TOP:
+        if (player.getVolume() < 21)
+            player.setVolume(player.getVolume() + 1);
+        break;
+
+    case LV_DIR_BOTTOM:
+        if (player.getVolume() > 0)
+            player.setVolume(player.getVolume() - 1);
+    default:
+        break;
+    }
+}
+
+void handle_browser_gesture(lv_dir_t dir)
+{
+    switch (dir)
+    {
+    case LV_DIR_LEFT:
+        if (currentScreen == UIScreen::UIScreenBrowser)
+        {
+            loadScreen(SCREEN_ID_UI_PLAYER);
+            currentScreen = UIScreen::UIScreenPlayer;
+        }
+        break;
+    case LV_DIR_RIGHT:
+        if (currentScreen == UIScreen::UIScreenPlayer)
+        {
+            loadScreen(SCREEN_ID_UI_BROWSER);
+            currentScreen = UIScreen::UIScreenBrowser;
+        }
+        break;
+    default:
+        break;
+    }
+}
 
 void action_gesture(lv_event_t *e)
 {
     lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_active()); // v9 : lv_indev_get_act -> lv_indev_active
-    
+
     switch (currentChild)
     {
-        case UiChild::UiChildTrackImage:
-            Serial.printf("[GESTURE] TrackImage : %s\n", dir == LV_DIR_LEFT ? "LEFT" : dir == LV_DIR_RIGHT ? "RIGHT" : "OTHER");
-            break;
-        case UiChild::UiChildTrackInfos:
-            Serial.printf("[GESTURE] TrackInfos : %s\n", dir == LV_DIR_LEFT ? "LEFT" : dir == LV_DIR_RIGHT ? "RIGHT" : "OTHER");
-            break;
+    case UiChild::UiChildTrackImage:
+        handle_browser_gesture(dir);
+        break;
+    case UiChild::UiChildTrackInfos:
+        handle_player_gesture(dir);
+        break;
     }
 }
+
