@@ -40,7 +40,6 @@ void action_play_pause_btn(lv_event_t *e)
     player.pauseResume();
 
     bool running = player.isRunning();
-    lv_image_set_src(objects.icon_play_pause, running ? &img_pause : &img_play); // v9 : lv_img_set_src -> lv_image_set_src
 
     if (DEBUG_UI_EVENTS)
         Serial.println(running ? "[Lecture]" : "[Pause]");
@@ -59,6 +58,13 @@ void action_next_btn(lv_event_t *e)
 
 void action_prev_btn(lv_event_t *e)
 {
+    if(player.currentTime() > 3) // si on est a plus de 3 secondes, on revient au debut de la piste
+    {
+        player.seekTo(0);
+        if (DEBUG_UI_EVENTS)
+            Serial.println("[Prev] Seek to 0 sec");
+        return;
+    }
     player.previous();
     const Music *track = playback.current();
     if (track)
@@ -101,11 +107,7 @@ void action_seek_slider_changed(lv_event_t *e)
     int32_t value = lv_slider_get_value(slider); // en secondes (range = duree de la piste)
 
     player.seekTo((uint32_t)value);
-
-    // NB: LV_EVENT_VALUE_CHANGED se declenche en continu pendant le glissement,
-    // donc seekTo() est appele plusieurs fois par seconde tant que le doigt bouge.
-    // Si ca provoque des saccades audio, remplacez LV_EVENT_VALUE_CHANGED par
-    // LV_EVENT_RELEASED dans EEZ Studio pour ne chercher qu'au relachement.
+    Serial.printf("[Seek] %d sec\n", value);
 }
 
 const char *childToString(UiChild child)

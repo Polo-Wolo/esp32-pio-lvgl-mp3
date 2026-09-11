@@ -13,6 +13,7 @@ extern void action_like_btn(lv_event_t * e);
 extern void action_gesture(lv_event_t * e);
 extern void action_child_pressed(lv_event_t * e);
 extern void action_child_clicked(lv_event_t * e);
+extern void action_seek_slider_changed(lv_event_t * e);
 
 #ifdef __cplusplus
 }
