@@ -1,6 +1,30 @@
 #include "audio_player.h"
 #include <SD_MMC.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/task.h"
 #include "playback/jukebox.h"
+
+// --- Detecteur de collision (diagnostic) ---
+static volatile bool     s_audioBusy  = false;
+static volatile TaskHandle_t s_holder = nullptr;
+
+void AudioPlayer::enterGuard(const char *fn)
+{
+    TaskHandle_t me = xTaskGetCurrentTaskHandle();
+    if (s_audioBusy && s_holder != me)
+    {
+        Serial.printf("[COLLISION] %s() appele depuis la tache '%s' (core %d) pendant qu'une AUTRE tache est deja dedans !\n",
+                       fn, pcTaskGetName(NULL), xPortGetCoreID());
+    }
+    s_audioBusy = true;
+    s_holder    = me;
+}
+
+void AudioPlayer::exitGuard(const char *fn)
+{
+    s_audioBusy = false;
+    s_holder    = nullptr;
+}
 
 // Broches I2S vers le DAC/ampli (4, 10, 11 sont libres sur cette carte,
 // 33-37 sont reserves en interne au PSRAM Octal)
@@ -23,7 +47,9 @@ bool AudioPlayer::begin()
 
 void AudioPlayer::loop()
 {
+    enterGuard("loop");
     audio.loop();
+    exitGuard("loop");
 }
 
 void AudioPlayer::attachJukebox(Jukebox &jb)
@@ -56,23 +82,29 @@ void AudioPlayer::next()
 {
     if (!jukebox)
         return;
+    enterGuard("next");
     if (jukebox->next())
         playCurrent();
+    exitGuard("next");
 }
 
 void AudioPlayer::previous()
 {
     if (!jukebox)
         return;
+    enterGuard("previous");
     if (jukebox->previous())
         playCurrent();
+    exitGuard("previous");
 }
 
 void AudioPlayer::pauseResume()
 {
+    enterGuard("pauseResume");
     Serial.printf("[Debug] pauseResume() : isRunning() avant = %s\n", audio.isRunning() ? "true" : "false");
     audio.pauseResume();
     Serial.printf("[Debug] pauseResume() : isRunning() apres = %s\n", audio.isRunning() ? "true" : "false");
+    exitGuard("pauseResume");
 }
 
 bool AudioPlayer::isRunning()
@@ -82,7 +114,9 @@ bool AudioPlayer::isRunning()
 
 void AudioPlayer::setVolume(uint8_t vol)
 {
+    enterGuard("setVolume");
     audio.setVolume(vol);
+    exitGuard("setVolume");
 }
 
 uint8_t AudioPlayer::getVolume()
@@ -105,15 +139,19 @@ void AudioPlayer::seekTo(uint32_t targetSeconds)
     if (!audio.isRunning())
         return;
 
+    enterGuard("seekTo");
+
     int32_t cur = (int32_t)audio.getAudioCurrentTime();
     int32_t offset = (int32_t)targetSeconds - cur;
 
-    if (offset == 0)
-        return; // deja a la bonne position, rien a faire
+    if (offset != 0)
+    {
+        bool ok = audio.setTimeOffset(offset);
+        Serial.printf("[Debug] seekTo(%u) : offset=%d -> %s\n",
+                      (unsigned)targetSeconds, (int)offset, ok ? "OK" : "ECHEC");
+    }
 
-    bool ok = audio.setTimeOffset(offset);
-    Serial.printf("[Debug] seekTo(%u) : offset=%d -> %s\n",
-                  (unsigned)targetSeconds, (int)offset, ok ? "OK" : "ECHEC");
+    exitGuard("seekTo");
 }
 
 void AudioPlayer::onInfo(Audio::msg_t m)

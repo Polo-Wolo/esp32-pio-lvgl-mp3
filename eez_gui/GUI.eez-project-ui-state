@@ -1,6 +1,7 @@
 {
   "navigation": {
     "selectedUserPageObject": "[GUI.eez-project]:/userPages/0",
+    "selectedActionObject": "[GUI.eez-project]:/actions/5",
     "selectedBitmapObject": "[GUI.eez-project]:/bitmaps/3",
     "subnavigationSelectedItems": {
       "variables-tab/sub-navigation/selected-item": "Enums"
@@ -24,7 +25,6 @@
           },
           {
             "type": "border",
-            "selected": 2,
             "size": 240,
             "location": "right",
             "children": [
@@ -125,6 +125,7 @@
                   "type": "tabset",
                   "id": "#c8490e78-3e2e-481f-ae91-6904fc6e692a",
                   "weight": 0.9425948604030796,
+                  "selected": 2,
                   "enableClose": false,
                   "children": [
                     {
@@ -1093,7 +1094,11 @@
     "[GUI.eez-project]:/userPages/1[flow-state]": {
       "selectionFront": {},
       "selectionBack": {
-        "0": {}
+        "0": {
+          "0": {
+            "$selected": true
+          }
+        }
       },
       "transform": {
         "translate": {

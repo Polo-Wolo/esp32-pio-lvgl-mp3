@@ -122,7 +122,8 @@
       "localVariables": [],
       "componentGroups": [],
       "userProperties": [],
-      "name": "next_btn"
+      "name": "next_btn",
+      "implementationType": "native"
     },
     {
       "objID": "a70c2b39-b6e0-4466-b561-6d9762ec5c14",
@@ -131,7 +132,8 @@
       "localVariables": [],
       "componentGroups": [],
       "userProperties": [],
-      "name": "play_pause_btn"
+      "name": "play_pause_btn",
+      "implementationType": "native"
     },
     {
       "objID": "8bd80370-c07d-4b5c-ef23-d893836c83f8",
@@ -140,7 +142,8 @@
       "localVariables": [],
       "componentGroups": [],
       "userProperties": [],
-      "name": "like_btn"
+      "name": "like_btn",
+      "implementationType": "native"
     },
     {
       "objID": "0f2a6776-aee5-4c84-baf9-b418775e7189",
@@ -149,7 +152,8 @@
       "localVariables": [],
       "componentGroups": [],
       "userProperties": [],
-      "name": "gesture"
+      "name": "gesture",
+      "implementationType": "native"
     },
     {
       "objID": "f864bfc3-661d-4f40-92fa-4a13cad86b7f",
@@ -158,7 +162,8 @@
       "localVariables": [],
       "componentGroups": [],
       "userProperties": [],
-      "name": "child_pressed"
+      "name": "child_pressed",
+      "implementationType": "native"
     },
     {
       "objID": "e6772a29-1c9a-4ca1-cb2b-fdd42c0f328e",
@@ -167,7 +172,8 @@
       "localVariables": [],
       "componentGroups": [],
       "userProperties": [],
-      "name": "child_clicked"
+      "name": "child_clicked",
+      "implementationType": "native"
     },
     {
       "objID": "60261092-1841-4e45-bf1a-8248e1a89be0",
@@ -176,7 +182,8 @@
       "localVariables": [],
       "componentGroups": [],
       "userProperties": [],
-      "name": "seek_slider_changed"
+      "name": "seek_slider_changed",
+      "implementationType": "native"
     }
   ],
   "userPages": [
@@ -781,7 +788,7 @@
               "eventHandlers": [
                 {
                   "objID": "d0fd4462-9b90-41c3-94c2-6fd552e3b875",
-                  "eventName": "RELEASED",
+                  "eventName": "VALUE_CHANGED",
                   "handlerType": "action",
                   "action": "seek_slider_changed",
                   "userData": 0
@@ -963,7 +970,7 @@
             "definition": {
               "MAIN": {
                 "DEFAULT": {
-                  "bg_color": "#000000",
+                  "bg_color": "#181818",
                   "bg_opa": 255
                 }
               }
@@ -1020,10 +1027,10 @@
             {
               "objID": "610422fc-176a-4083-e3dc-1dbf5e4a4cb2",
               "type": "LVGLListWidget",
-              "left": 41,
-              "top": 30,
-              "width": 382,
-              "height": 162,
+              "left": 39,
+              "top": 28,
+              "width": 166,
+              "height": 92,
               "customInputs": [],
               "customOutputs": [],
               "style": {
@@ -1247,7 +1254,15 @@
           "disabledStateType": "literal",
           "states": "",
           "localStyles": {
-            "objID": "b3095edb-c6c3-4d6a-95a5-f0fb06152c07"
+            "objID": "b3095edb-c6c3-4d6a-95a5-f0fb06152c07",
+            "definition": {
+              "MAIN": {
+                "DEFAULT": {
+                  "bg_color": "#000000",
+                  "bg_opa": 255
+                }
+              }
+            }
           },
           "groupIndex": 0
         }

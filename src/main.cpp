@@ -93,7 +93,7 @@ void loop()
   player.loop();
 
   static uint32_t lastUiUpdate = 0;
-  if (millis() - lastUiUpdate > 500)
+  if (millis() - lastUiUpdate > 1000) // mise a jour de l'UI toutes les 1s
   {
     lastUiUpdate = millis();
     updateNowPlayingUI();

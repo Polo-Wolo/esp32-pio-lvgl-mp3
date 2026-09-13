@@ -46,4 +46,11 @@ private:
     Jukebox *jukebox = nullptr;
 
     void onInfo(Audio::msg_t m);
+
+    // --- Detecteur de collision (diagnostic uniquement, ne corrige rien) ---
+    // Signale si deux methodes touchant "audio" s'executent en meme temps
+    // depuis deux taches FreeRTOS differentes (ex: tache LVGL vs tache
+    // principale Arduino qui appelle loop()).
+    void enterGuard(const char *fn);
+    void exitGuard(const char *fn);
 };

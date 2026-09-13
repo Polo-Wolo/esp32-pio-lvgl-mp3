@@ -31,6 +31,12 @@ enum class UiChild
 UiChild currentChild = UiChild::UiChildNone;
 static UIScreen currentScreen = UIScreen::UIScreenPlayer;
 
+// Pose a true par action_gesture() des qu'un swipe est detecte sur la sequence
+// tactile en cours. action_child_clicked() le verifie pour ignorer le clic
+// qui suit un swipe (LVGL declenche CLICKED meme apres un geste sur le meme
+// objet). Remis a zero au debut de chaque nouvelle pression.
+static bool s_gestureHandled = false;
+
 // ==================================================
 // BOUTONS DE LECTURE
 // ==================================================
@@ -39,10 +45,11 @@ void action_play_pause_btn(lv_event_t *e)
 {
     player.pauseResume();
 
-    bool running = player.isRunning();
-
     if (DEBUG_UI_EVENTS)
+    {
+        bool running = player.isRunning();
         Serial.println(running ? "[Lecture]" : "[Pause]");
+    }
 }
 
 void action_next_btn(lv_event_t *e)
@@ -58,7 +65,7 @@ void action_next_btn(lv_event_t *e)
 
 void action_prev_btn(lv_event_t *e)
 {
-    if(player.currentTime() > 3) // si on est a plus de 3 secondes, on revient au debut de la piste
+    if (player.currentTime() > 3) // si on est a plus de 3 secondes, on revient au debut de la piste
     {
         player.seekTo(0);
         if (DEBUG_UI_EVENTS)
@@ -127,17 +134,64 @@ const char *childToString(UiChild child)
 
 void action_child_pressed(lv_event_t *e)
 {
+    s_gestureHandled = false; // nouvelle pression : on oublie l'eventuel geste precedent
+
     int data = (int)lv_event_get_user_data(e);
+    switch (data)
+    {
+    case 0:
+        currentChild = UiChild::UiChildTrackImage;
+        break;
+    case 1:
+        currentChild = UiChild::UiChildTrackInfos;
+        break;
+    default:
+        currentChild = UiChild::UiChildNone;
+    }
     if (data >= 0 && data < (int)UiChild::UiChildCount)
         currentChild = (UiChild)data;
-    else
-        currentChild = UiChild::UiChildNone;
+
     if (DEBUG_UI_EVENTS)
         Serial.printf("[CHILD] Current Child : %s\n", childToString(currentChild));
 }
 
 void action_child_clicked(lv_event_t *e)
 {
+    // --- Comparaison diagnostique, ne change aucun comportement ---
+    // On veut voir si lv_indev_get_gesture_dir() aurait pu remplacer
+    // s_gestureHandled. Si les deux logs concordent toujours (true <-> != NONE),
+    // on pourra simplifier plus tard. S'ils divergent, on garde le drapeau maison.
+    lv_dir_t indevDir = lv_indev_get_gesture_dir(lv_indev_active());
+    Serial.printf("[DEBUG-GESTURE] s_gestureHandled=%s | lv_indev_get_gesture_dir=%d (NONE=%d)\n",
+                  s_gestureHandled ? "true" : "false", (int)indevDir, (int)LV_DIR_NONE);
+
+    if (s_gestureHandled)
+    {
+        // Ce "clic" est la fin d'un swipe deja traite par action_gesture() :
+        // on l'ignore, sinon un swipe declenche AUSSI play/pause.
+        s_gestureHandled = false;
+        currentChild = UiChild::UiChildNone;
+        if (DEBUG_UI_EVENTS)
+            Serial.println("[CHILD] Clic ignore (etait un geste)");
+        return;
+    }
+
+    switch (currentChild)
+    {
+    case UiChild::UiChildTrackImage:
+        if (DEBUG_UI_EVENTS)
+            Serial.println("[CHILD] TrackImage clicked");
+        break;
+    case UiChild::UiChildTrackInfos:
+        action_play_pause_btn(nullptr);
+        if (DEBUG_UI_EVENTS)
+            Serial.println("[CHILD] TrackInfos clicked");
+        break;
+    default:
+        if (DEBUG_UI_EVENTS)
+            Serial.println("[CHILD] Unknown child clicked");
+    }
+
     currentChild = UiChild::UiChildNone;
     if (DEBUG_UI_EVENTS)
         Serial.printf("[CHILD] RESET : %s\n", childToString(currentChild));
@@ -196,6 +250,8 @@ void handle_browser_gesture(lv_dir_t dir)
 
 void action_gesture(lv_event_t *e)
 {
+    s_gestureHandled = true; // un swipe vient d'etre traite : le clic qui suivra sera ignore
+
     lv_dir_t dir = lv_indev_get_gesture_dir(lv_indev_active());
 
     if (currentScreen == UIScreen::UIScreenBrowser)
@@ -216,4 +272,3 @@ void action_gesture(lv_event_t *e)
         }
     }
 }
-

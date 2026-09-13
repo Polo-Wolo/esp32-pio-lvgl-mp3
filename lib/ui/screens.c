@@ -32,7 +32,7 @@ void create_screen_ui_player() {
     lv_obj_add_event_cb(obj, action_gesture, LV_EVENT_GESTURE, (void *)1);
     lv_obj_add_flag(obj, LV_OBJ_FLAG_EVENT_BUBBLE);
     lv_obj_remove_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_SNAPPABLE|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER);
-    lv_obj_set_style_bg_color(obj, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_color(obj, lv_color_hex(0x181818), LV_PART_MAIN | LV_STATE_DEFAULT);
     lv_obj_set_style_bg_opa(obj, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     {
         lv_obj_t *parent_obj = obj;
@@ -186,7 +186,7 @@ void create_screen_ui_player() {
             lv_obj_set_pos(obj, 71, 212);
             lv_obj_set_size(obj, 377, 8);
             lv_slider_set_value(obj, 25, LV_ANIM_OFF);
-            lv_obj_add_event_cb(obj, action_seek_slider_changed, LV_EVENT_RELEASED, (void *)0);
+            lv_obj_add_event_cb(obj, action_seek_slider_changed, LV_EVENT_VALUE_CHANGED, (void *)0);
             lv_obj_add_flag(obj, LV_OBJ_FLAG_EVENT_BUBBLE);
             lv_obj_remove_flag(obj, LV_OBJ_FLAG_SCROLL_CHAIN_VER|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_ON_FOCUS|LV_OBJ_FLAG_SCROLL_WITH_ARROW|LV_OBJ_FLAG_SNAPPABLE);
             lv_obj_set_style_height(obj, 8, LV_PART_MAIN | LV_STATE_DEFAULT);
@@ -242,12 +242,14 @@ void create_screen_ui_browser() {
     lv_obj_add_event_cb(obj, action_gesture, LV_EVENT_GESTURE, (void *)0);
     lv_obj_add_flag(obj, LV_OBJ_FLAG_EVENT_BUBBLE);
     lv_obj_remove_flag(obj, LV_OBJ_FLAG_CLICK_FOCUSABLE|LV_OBJ_FLAG_SNAPPABLE|LV_OBJ_FLAG_SCROLLABLE|LV_OBJ_FLAG_SCROLL_ELASTIC|LV_OBJ_FLAG_SCROLL_MOMENTUM|LV_OBJ_FLAG_SCROLL_CHAIN_HOR|LV_OBJ_FLAG_SCROLL_CHAIN_VER);
+    lv_obj_set_style_bg_color(obj, lv_color_hex(0x000000), LV_PART_MAIN | LV_STATE_DEFAULT);
+    lv_obj_set_style_bg_opa(obj, 255, LV_PART_MAIN | LV_STATE_DEFAULT);
     {
         lv_obj_t *parent_obj = obj;
         {
             lv_obj_t *obj = lv_list_create(parent_obj);
-            lv_obj_set_pos(obj, 41, 30);
-            lv_obj_set_size(obj, 382, 162);
+            lv_obj_set_pos(obj, 39, 28);
+            lv_obj_set_size(obj, 166, 92);
             {
                 lv_obj_t *parent_obj = obj;
                 {
