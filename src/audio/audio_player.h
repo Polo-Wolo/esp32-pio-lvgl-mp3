@@ -1,6 +1,8 @@
 #pragma once
 #include <Arduino.h>
 #include <Audio.h>
+#include "freertos/FreeRTOS.h"
+#include "freertos/semphr.h"
 
 class Jukebox;
 
@@ -47,10 +49,16 @@ private:
 
     void onInfo(Audio::msg_t m);
 
-    // --- Detecteur de collision (diagnostic uniquement, ne corrige rien) ---
-    // Signale si deux methodes touchant "audio" s'executent en meme temps
-    // depuis deux taches FreeRTOS differentes (ex: tache LVGL vs tache
-    // principale Arduino qui appelle loop()).
-    void enterGuard(const char *fn);
-    void exitGuard(const char *fn);
+    // --- Mutex reel : protege "audio" contre les acces concurrents entre
+    // la tache LVGL (boutons/gestes) et la tache principale Arduino (loop()).
+    // Recursif : une meme tache peut le reprendre sans deadlocker (ex: next()
+    // qui appelle playCurrent(), toutes deux protegees).
+    SemaphoreHandle_t _mutex = nullptr;
+    void lock();
+    void unlock();
+
+    // Pose par onInfo() sur evt_eof, traite dans loop(). On ne rappelle JAMAIS
+    // next()/connecttoFS() directement depuis le callback audio : la lib peut
+    // deadlocker en interne si on la rappelle depuis son propre callback.
+    volatile bool _trackEnded = false;
 };
