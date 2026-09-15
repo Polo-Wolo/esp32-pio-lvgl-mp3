@@ -4,13 +4,13 @@
 #include "actions.h" // declare action_play_pause_btn, action_next_btn...
 #include "screens.h" // declare "objects" (objects.play_pause, objects.ttttest...)
 #include "images.h"  // declare img_play, img_pause...
-#include "playback/jukebox.h"
+
 #include "audio/audio_player.h"
+#include "ui_now_playing.h"
 
 #define DEBUG_UI_EVENTS 0
 
-// Definis dans main.cpp
-extern Jukebox playback;
+// Defini dans main.cpp
 extern AudioPlayer player;
 
 // Ecran actuellement affiche, pour savoir dans quel sens naviguer au swipe
@@ -41,80 +41,55 @@ static bool s_gestureHandled = false;
 // BOUTONS DE LECTURE
 // ==================================================
 
+// Une commande refusee est signalee ; aucune attente dans la tache LVGL.
+static void reportCommand(bool accepted)
+{
+    if (!accepted)
+        Serial.println("[AudioPlayer] Commande refusee : file pleine ou player indisponible.");
+}
+
 void action_play_pause_btn(lv_event_t *e)
 {
-    player.pauseResume();
-
-    if (DEBUG_UI_EVENTS)
-    {
-        bool running = player.isRunning();
-        Serial.println(running ? "[Lecture]" : "[Pause]");
-    }
+    reportCommand(player.pauseResume());
 }
 
 void action_next_btn(lv_event_t *e)
 {
-    player.next();
-    const Music *track = playback.current();
-    if (track)
-    {
-        if (DEBUG_UI_EVENTS)
-            Serial.printf("[Next] %s\n", track->title.c_str());
-    }
+    reportCommand(player.next());
 }
 
 void action_prev_btn(lv_event_t *e)
 {
-    if (player.currentTime() > 3) // si on est a plus de 3 secondes, on revient au debut de la piste
-    {
-        player.seekTo(0);
-        if (DEBUG_UI_EVENTS)
-            Serial.println("[Prev] Seek to 0 sec");
-        return;
-    }
-    player.previous();
-    const Music *track = playback.current();
-    if (track)
-    {
-        if (DEBUG_UI_EVENTS)
-            Serial.printf("[Prev] %s\n", track->title.c_str());
-    }
+    reportCommand(player.previousOrRestart());
 }
 
 void action_shuffle_btn(lv_event_t *e)
 {
-    playback.toggleShuffle();
-    // TODO : mettre a jour l'icone du bouton selon playback.isShuffleEnabled()
+    reportCommand(player.toggleShuffle());
 }
 
 void action_repeat_btn(lv_event_t *e)
 {
-    playback.cycleRepeatMode();
-    // TODO : mettre a jour l'icone du bouton selon playback.repeatMode() (OFF/ALL/ONE)
+    reportCommand(player.cycleRepeatMode());
 }
 
 void action_like_btn(lv_event_t *e)
 {
-    // TODO : brancher sur une future gestion de favoris/playlists (.m3u)
-    const Music *track = playback.current();
-    if (track)
+    // TODO : favoris/playlists. Lire uniquement la copie publiee.
+    if (DEBUG_UI_EVENTS)
     {
-        if (DEBUG_UI_EVENTS)
-            Serial.printf("[Like] %s\n", track->title.c_str());
+        auto state = player.state();
+        if (state.hasTrack)
+            Serial.printf("[Like] %s\n", state.title.c_str());
     }
 }
-
 // ==================================================
 // SEEK : glisser le slider deplace la lecture
 // ==================================================
 
 void action_seek_slider_changed(lv_event_t *e)
 {
-    lv_obj_t *slider = (lv_obj_t *)lv_event_get_target(e);
-    int32_t value = lv_slider_get_value(slider); // en secondes (range = duree de la piste)
-
-    player.seekTo((uint32_t)value);
-    Serial.printf("[Seek] %d sec\n", value);
+    handleSeekSliderEvent(e);
 }
 
 const char *childToString(UiChild child)
@@ -213,13 +188,11 @@ void handle_player_gesture(lv_dir_t dir)
         break;
 
     case LV_DIR_TOP:
-        if (player.getVolume() < 21)
-            player.setVolume(player.getVolume() + 1);
+        reportCommand(player.adjustVolume(1));
         break;
 
     case LV_DIR_BOTTOM:
-        if (player.getVolume() > 0)
-            player.setVolume(player.getVolume() - 1);
+        reportCommand(player.adjustVolume(-1));
     default:
         break;
     }

@@ -2,63 +2,85 @@
 #include <Arduino.h>
 #include <Audio.h>
 #include "freertos/FreeRTOS.h"
+#include "freertos/queue.h"
 #include "freertos/semphr.h"
+#include "playback/jukebox.h"
 
-class Jukebox;
-
-// Fait le lien entre la lib ESP32-audioI2S (decodage + sortie I2S) et le Jukebox
-// (file de lecture). Le Jukebox ne sait pas jouer du son, l'AudioPlayer ne sait
-// pas gerer une file : chacun son role.
 class AudioPlayer
 {
 public:
-    // Configure les broches I2S et le callback d'infos audio (ID3, fin de piste...).
-    // A appeler une fois dans setup(), avant l'init de l'ecran/LVGL (voir main.cpp).
+    // Copie coherente, sans pointeur vers le Jukebox ou le decodeur.
+    struct State
+    {
+        bool running = false;
+        uint8_t volume = 12;
+        uint32_t currentTime = 0;
+        uint32_t duration = 0;
+        uint32_t trackGeneration = 0;
+        uint32_t seekRequest = 0;
+        bool seekAccepted = false;
+        bool hasTrack = false;
+        String title, artist, album;
+        bool shuffle = false;
+        RepeatMode repeat = RepeatMode::OFF;
+    };
+
+    AudioPlayer() = default;
+    AudioPlayer(const AudioPlayer &) = delete;
+    AudioPlayer &operator=(const AudioPlayer &) = delete;
+    // Dans setup(), avant LVGL. Objet global de longue duree.
     bool begin();
-
-    // A appeler a chaque loop() pour laisser la lib decoder/jouer l'audio.
+    // Exclusivement depuis la tache Arduino, proprietaire du decodeur.
     void loop();
-
-    // Associe le Jukebox dont ce player doit suivre la piste courante.
+    // Dans setup(), apres chargement de la bibliotheque, avant le premier loop().
+    // Ensuite, aucun acces direct au Jukebox depuis une autre tache.
     void attachJukebox(Jukebox &jb);
 
-    // Lance la lecture de jukebox->current()
-    void playCurrent();
+    // Asynchrones : true = accepte, pas encore execute ; false = file pleine
+    // ou player non initialise. Les envois ne bloquent jamais LVGL.
+    bool playCurrent();
+    bool next();
+    bool previous();
+    bool previousOrRestart();
+    bool pauseResume();
+    bool setVolume(uint8_t vol);
+    bool adjustVolume(int8_t delta);
+    bool seekTo(uint32_t targetSeconds, uint32_t request = 0);
+    bool toggleShuffle();
+    bool cycleRepeatMode();
 
-    // Passe a la piste suivante/precedente du Jukebox et la joue.
-    void next();
-    void previous();
-
-    void pauseResume();
-    bool isRunning();
-
-    void setVolume(uint8_t vol); // 0..21
-    uint8_t getVolume();
-
-    uint32_t currentTime(); // secondes ecoulees sur la piste en cours
-    uint32_t duration();    // duree totale de la piste en cours (secondes)
-
-    // Deplace la lecture a une position absolue (en secondes) dans la piste
-    // en cours. La lib sous-jacente ne fait que des sauts relatifs
-    // (setTimeOffset), donc on calcule l'ecart necessaire ici.
-    void seekTo(uint32_t targetSeconds);
+    State state();
+    bool isRunning() { return state().running; }
+    uint8_t getVolume() { return state().volume; }
+    uint32_t currentTime() { return state().currentTime; }
+    uint32_t duration() { return state().duration; }
 
 private:
+    enum class CommandType : uint8_t
+    {
+        Play, Next, Previous, PreviousOrRestart, PauseResume,
+        SetVolume, AdjustVolume, Seek, Shuffle, Repeat
+    };
+    // FreeRTOS copie les valeurs : ni String ni pointeur dans la file.
+    struct Command { CommandType type; int64_t value; uint32_t request; };
+    static constexpr UBaseType_t CommandCapacity = 24;
     Audio audio;
     Jukebox *jukebox = nullptr;
+    QueueHandle_t _commands = nullptr;
+    SemaphoreHandle_t _stateMutex = nullptr;
+    State _state;
+    bool _trackEnded = false;
+    bool _discardTrackEvents = false;
+    uint32_t _lastPublish = 0;
+    uint32_t _trackGeneration = 0;
+    uint32_t _seekRequest = 0;
+    bool _seekAccepted = false;
 
+    bool enqueue(CommandType type, int64_t value = 0, uint32_t request = 0);
+    void execute(const Command &command);
+    void playCurrentNow();
+    void nextNow();
+    bool seekNow(uint32_t targetSeconds);
+    void publishState();
     void onInfo(Audio::msg_t m);
-
-    // --- Mutex reel : protege "audio" contre les acces concurrents entre
-    // la tache LVGL (boutons/gestes) et la tache principale Arduino (loop()).
-    // Recursif : une meme tache peut le reprendre sans deadlocker (ex: next()
-    // qui appelle playCurrent(), toutes deux protegees).
-    SemaphoreHandle_t _mutex = nullptr;
-    void lock();
-    void unlock();
-
-    // Pose par onInfo() sur evt_eof, traite dans loop(). On ne rappelle JAMAIS
-    // next()/connecttoFS() directement depuis le callback audio : la lib peut
-    // deadlocker en interne si on la rappelle depuis son propre callback.
-    volatile bool _trackEnded = false;
 };

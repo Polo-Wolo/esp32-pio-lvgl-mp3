@@ -32,7 +32,11 @@ void setup()
   // (symptome observe : "i2s_alloc_dma_desc... allocate DMA buffer failed").
   // En reservant sa (petite) part de RAM interne en tout premier, l'I2S
   // s'initialise correctement avant que LVGL ne prenne le reste.
-  player.begin();
+  if (!player.begin())
+  {
+    ESP_LOGE(TAG, "Echec initialisation AudioPlayer");
+    return;
+  }
   Serial.printf("[Debug] Apres player.begin() : Heap interne libre=%u | PSRAM libre=%u\n",
                 (unsigned)ESP.getFreeHeap(), (unsigned)ESP.getFreePsram());
 
@@ -49,6 +53,7 @@ void setup()
   {
     ESP_LOGI(TAG, "Initializing UI");
     ui_init();
+    initNowPlayingUI();
     display_lvgl_unlock();
     ESP_LOGI(TAG, "UI initialization complete");
   }
@@ -81,7 +86,8 @@ void setup()
 
   // Le Jukebox est pret, l'I2S deja initialise plus haut : on peut lancer la lecture
   player.attachJukebox(playback);
-  player.playCurrent();
+  if (!player.playCurrent())
+    ESP_LOGE(TAG, "Commande de lecture refusee");
 
   ESP_LOGI(TAG, "Setup complete");
 }
@@ -93,7 +99,7 @@ void loop()
   player.loop();
 
   static uint32_t lastUiUpdate = 0;
-  if (millis() - lastUiUpdate > 1000) // mise a jour de l'UI toutes les 1s
+  if (millis() - lastUiUpdate > 100) // mise a jour depuis l'etat publie toutes les 100 ms
   {
     lastUiUpdate = millis();
     updateNowPlayingUI();
