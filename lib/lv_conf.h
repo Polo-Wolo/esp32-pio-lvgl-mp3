@@ -519,9 +519,9 @@
     #define LV_FS_FATFS_CACHE_SIZE 0
 #endif
 
-#define LV_USE_FS_MEMFS 0
+#define LV_USE_FS_MEMFS 1
 #if LV_USE_FS_MEMFS
-    #define LV_FS_MEMFS_LETTER '\0'
+    #define LV_FS_MEMFS_LETTER 'M'
 #endif
 
 #define LV_USE_FS_LITTLEFS 0

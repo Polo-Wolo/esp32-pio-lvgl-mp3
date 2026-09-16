@@ -3,6 +3,7 @@
 #include "screens.h"
 #include "images.h"
 #include "display_manager.h"
+#include "cover_thumbnail.h"
 #include <misc/cache/instance/lv_image_cache.h>
 
 #include "audio/audio_player.h"
@@ -16,12 +17,22 @@ static String lastTitle, lastArtist, lastAlbum;
 static uint32_t lastDuration = 0;
 static uint32_t lastCurrent = (uint32_t)-1;
 static std::shared_ptr<const std::vector<uint8_t>> displayedCover;
-static lv_image_dsc_t coverDescriptor{};
+static lv_image_dsc_t coverImage{};
+static uint16_t *coverPixels = nullptr;
 static lv_obj_t *pauseOverlay = nullptr;
 
 // Accedes uniquement sous le verrou LVGL (callbacks et rafraichissement).
 static bool seekPending = false;
 static uint32_t seekTarget = 0, seekStarted = 0, seekRequest = 0, seekTrack = 0;
+
+static void showMusicPlaceholder()
+{
+    // Quitter l'alignement automatique avant de fixer l'echelle : LVGL ignore le scale manuel
+    // tant que l'alignement automatique est actif.
+    lv_image_set_inner_align(objects.track_image, LV_IMAGE_ALIGN_CENTER);
+    lv_image_set_scale(objects.track_image, LV_SCALE_NONE);
+    lv_image_set_src(objects.track_image, &img_music);
+}
 
 static void showCurrentTime(uint32_t seconds)
 {
@@ -43,8 +54,7 @@ void initNowPlayingUI()
 
     // La pochette reste en arriere-plan ; pause est une image independante.
     lv_obj_set_style_bg_image_src(objects.track_image, nullptr, LV_PART_MAIN);
-    lv_image_set_src(objects.track_image, &img_music);
-    lv_image_set_inner_align(objects.track_image, LV_IMAGE_ALIGN_CENTER);
+    showMusicPlaceholder();
 
     pauseOverlay = lv_image_create(objects.track_image);
     lv_image_set_src(pauseOverlay, &img_pause);
@@ -87,27 +97,19 @@ void updateNowPlayingUI()
     const auto state = player.state();
     if (state.coverJpeg != displayedCover)
     {
-        // Le cache LVGL est indexe par l'adresse du descripteur. Le retirer
-        // avant de remplacer son buffer evite de reutiliser l'ancienne pochette.
-        if (lv_image_get_src(objects.track_image) == &coverDescriptor)
-        {
-            lv_image_set_src(objects.track_image, &img_music);
-            lv_image_cache_drop(&coverDescriptor);
+        // Detacher l'image et purger ses caches avant de liberer les octets.
+        showMusicPlaceholder();
+        if (coverPixels) {
+            lv_image_cache_drop(&coverImage);
+            free(coverPixels);
+            coverPixels = nullptr;
         }
         displayedCover = state.coverJpeg;
         if (displayedCover && !displayedCover->empty())
         {
-            coverDescriptor.header.magic = LV_IMAGE_HEADER_MAGIC;
-            coverDescriptor.header.cf = LV_COLOR_FORMAT_RAW;
-            coverDescriptor.data_size = displayedCover->size();
-            coverDescriptor.data = displayedCover->data();
-            lv_image_set_src(objects.track_image, &coverDescriptor);
-            lv_image_set_inner_align(objects.track_image, LV_IMAGE_ALIGN_COVER);
-        }
-        else
-        {
-            lv_image_set_src(objects.track_image, &img_music);
-            lv_image_set_inner_align(objects.track_image, LV_IMAGE_ALIGN_CENTER);
+            coverPixels = decodeCoverThumbnail(displayedCover->data(), displayedCover->size(), coverImage);
+            if (coverPixels)
+                lv_image_set_src(objects.track_image, &coverImage);
         }
     }
 
