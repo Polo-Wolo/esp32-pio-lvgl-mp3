@@ -70,3 +70,37 @@ Apres `pio run`, televerser puis verifier avec le moniteur serie :
 
 La compilation ne valide pas les temps de reponse, l'absence de coupures audio
 ni le comportement du materiel : ces points necessitent cet essai sur carte.
+
+### Pochettes et stabilisation de la duree
+
+Les evenements APIC transmettent uniquement le chemin et les positions des images
+a une tache `Cover` (priorite 1, pile 6 Kio). Cette tache ouvre son propre fichier,
+lit la SD par blocs de 4 Kio et decode le JPEG sans verrou LVGL. Elle cede du temps
+entre lectures et environ toutes les 4 ms pendant le decodage. Le cout total du
+decodage depend toujours de la resolution source ; le log `[Cover] Traitement fond`
+mesure le temps ecoule, attentes comprises.
+
+Une seule demande peut attendre. Une nouvelle piste annule le travail precedent ;
+le resultat est verifie avant publication et associe a la generation de piste.
+Seule la tache UI change la source LVGL et purge son cache avant de liberer l'image.
+
+Le JPEG temporaire (maximum 512 Kio) et la vignette RGB565 (50 Kio) utilisent la
+PSRAM. Le JPEG est libere apres decodage. Il n'y a pas de repli de ces gros buffers
+sur la RAM interne : sans PSRAM suffisante, le logo musique reste affiche. Pendant
+une transition, une ancienne vignette peut encore etre retenue par l'UI. Le
+decodeur utilise aussi 4 Kio temporaires de RAM et refuse les images depassant
+16 megapixels. Les JPEG progressifs et les PNG restent non pris en charge.
+
+La duree affiche `--:--` pendant l'estimation initiale. Elle est acceptee au plus
+tot apres 2 s, apres 1,5 s dans une bande de +/-2 s. Une correction ulterieure doit
+elle aussi se stabiliser. Cela reste une estimation, pas une garantie de duree
+exacte. Le slider est desactive tant que cette premiere estimation manque ; les
+calculs de duree et de seek du decodeur audio ne sont pas modifies.
+
+Verification sur carte : tester une pochette 500 x 500 puis 1280 x 720, passer
+rapidement plusieurs pistes pendant son chargement, tester une piste sans pochette
+et une image non supportee, puis pause/reprise et seek apres stabilisation. Verifier
+qu'aucune ancienne pochette ne reapparait et relever le temps `[Cover]` ainsi que
+les eventuelles coupures audio. Le test C++ autonome `test/duration_display_test.cpp`
+couvre le filtre de duree, les corrections, changements de piste et le debordement
+de `millis()`.

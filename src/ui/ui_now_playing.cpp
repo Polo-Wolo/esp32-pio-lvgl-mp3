@@ -3,7 +3,7 @@
 #include "screens.h"
 #include "images.h"
 #include "display_manager.h"
-#include "cover_thumbnail.h"
+#include "duration_display.h"
 #include <misc/cache/instance/lv_image_cache.h>
 
 #include "audio/audio_player.h"
@@ -16,9 +16,10 @@ extern AudioPlayer player;
 static String lastTitle, lastArtist, lastAlbum;
 static uint32_t lastDuration = 0;
 static uint32_t lastCurrent = (uint32_t)-1;
-static std::shared_ptr<const std::vector<uint8_t>> displayedCover;
-static lv_image_dsc_t coverImage{};
-static uint16_t *coverPixels = nullptr;
+static std::shared_ptr<const CoverThumbnail> displayedCover;
+static DurationDisplay durationDisplay;
+static uint32_t durationTrack = UINT32_MAX;
+static uint32_t lastDurationLabel = UINT32_MAX;
 static lv_obj_t *pauseOverlay = nullptr;
 
 // Accedes uniquement sous le verrou LVGL (callbacks et rafraichissement).
@@ -95,22 +96,14 @@ void updateNowPlayingUI()
         return;
     // Lire apres le verrou : un callback a pu envoyer un seek pendant l'attente.
     const auto state = player.state();
-    if (state.coverJpeg != displayedCover)
+    if (state.cover != displayedCover)
     {
-        // Detacher l'image et purger ses caches avant de liberer les octets.
         showMusicPlaceholder();
-        if (coverPixels) {
-            lv_image_cache_drop(&coverImage);
-            free(coverPixels);
-            coverPixels = nullptr;
-        }
-        displayedCover = state.coverJpeg;
-        if (displayedCover && !displayedCover->empty())
-        {
-            coverPixels = decodeCoverThumbnail(displayedCover->data(), displayedCover->size(), coverImage);
-            if (coverPixels)
-                lv_image_set_src(objects.track_image, &coverImage);
-        }
+        if (displayedCover)
+            lv_image_cache_drop(&displayedCover->image);
+        displayedCover = state.cover;
+        if (displayedCover)
+            lv_image_set_src(objects.track_image, &displayedCover->image);
     }
 
     if (pauseOverlay)
@@ -128,7 +121,16 @@ void updateNowPlayingUI()
     }
 
     uint32_t cur = state.currentTime;
-    uint32_t dur = state.duration;
+    if (durationTrack != state.trackGeneration) {
+        durationTrack = state.trackGeneration;
+        durationDisplay.reset(millis());
+        lastDuration = UINT32_MAX;
+        lastDurationLabel = UINT32_MAX;
+        seekPending = false;
+    }
+    const uint32_t dur = durationDisplay.update(state.duration, millis());
+    if (dur) lv_obj_remove_state(objects.track_seek_slider, LV_STATE_DISABLED);
+    else lv_obj_add_state(objects.track_seek_slider, LV_STATE_DISABLED);
 
     bool userIsDragging = lv_slider_is_dragged(objects.track_seek_slider) ||
                           lv_obj_has_state(objects.track_seek_slider, LV_STATE_PRESSED);
@@ -151,19 +153,26 @@ void updateNowPlayingUI()
 
     if (!userIsDragging && dur != lastDuration)
     {
-        lv_slider_set_range(objects.track_seek_slider, 0, (int32_t)dur);
+        lv_slider_set_range(objects.track_seek_slider, 0, dur ? (int32_t)dur : 1);
         lastDuration = dur;
     }
     if (!userIsDragging)
     {
         // Pas d'animation qui ramene progressivement vers un ancien etat.
-        if (lv_slider_get_value(objects.track_seek_slider) != (int32_t)cur)
-            lv_slider_set_value(objects.track_seek_slider, (int32_t)cur, LV_ANIM_OFF);
+        const int32_t sliderTime = dur ? (int32_t)cur : 0;
+        if (lv_slider_get_value(objects.track_seek_slider) != sliderTime)
+            lv_slider_set_value(objects.track_seek_slider, sliderTime, LV_ANIM_OFF);
     }
 
     // --- Temps ecoule / duree totale ---
     showCurrentTime(cur);
-    lv_label_set_text_fmt(objects.track_duration, "%02d:%02d", (int)(dur / 60), (int)(dur % 60));
+    if (dur != lastDurationLabel) {
+        if (dur)
+            lv_label_set_text_fmt(objects.track_duration, "%02d:%02d", (int)(dur / 60), (int)(dur % 60));
+        else
+            lv_label_set_text(objects.track_duration, "--:--");
+        lastDurationLabel = dur;
+    }
 
     // --- Textes ---
     if (state.title != lastTitle)
