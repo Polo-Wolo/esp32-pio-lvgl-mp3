@@ -1,6 +1,8 @@
 #pragma once
 #include <Arduino.h>
 #include <Audio.h>
+#include <memory>
+#include <vector>
 #include "freertos/FreeRTOS.h"
 #include "freertos/queue.h"
 #include "freertos/semphr.h"
@@ -21,6 +23,9 @@ public:
         bool seekAccepted = false;
         bool hasTrack = false;
         String title, artist, album;
+        // JPEG extrait du tag APIC. Le shared_ptr garde les octets valides
+        // pendant que LVGL les utilise dans l'autre tache.
+        std::shared_ptr<const std::vector<uint8_t>> coverJpeg;
         bool shuffle = false;
         RepeatMode repeat = RepeatMode::OFF;
     };
@@ -75,6 +80,8 @@ private:
     uint32_t _trackGeneration = 0;
     uint32_t _seekRequest = 0;
     bool _seekAccepted = false;
+    String _currentPath;
+    std::shared_ptr<const std::vector<uint8_t>> _coverJpeg;
 
     bool enqueue(CommandType type, int64_t value = 0, uint32_t request = 0);
     void execute(const Command &command);

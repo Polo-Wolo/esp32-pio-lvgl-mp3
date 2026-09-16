@@ -1328,6 +1328,15 @@
       "alwaysBuild": false,
       "lvglBinaryOutputFormat": 3,
       "lvglDither": false
+    },
+    {
+      "objID": "61956978-09d9-4ba0-80c9-d7c8c2cb81e0",
+      "name": "pause",
+      "image": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABwAAAAcCAYAAAByDd+UAAAACXBIWXMAAA7DAAAOwwHHb6hkAAAAGXRFWHRTb2Z0d2FyZQB3d3cuaW5rc2NhcGUub3Jnm+48GgAAAN5JREFUSIntljEKwkAQRV9ELAP2sRIET+AVUgliZWHjATxMLmEpWHmD4AkEW+0FyxQZi0w0bDaJiESU/TAw2f2Zx7ILM56I0KY6rdK+AezW7M2AkWV9Bxw1HwNTi+cEbK1VRcQWAxFJxa644IsrPKnWKNWuOqEPeJpfgAToa/iGD+Cq0QMC/bfoe+iVOwyBIRDVeCL1hE3F/v+VOqADOqADOuAPAutGjFx7ng24SmtgSdaA3wLeACHr3IFlz8zzaSCXGL5G4BmYAxNjPQE2he8VsKB8soPWKMlzg/CndQeM+n/nHymfVAAAAABJRU5ErkJggg==",
+      "bpp": 32,
+      "alwaysBuild": false,
+      "lvglBinaryOutputFormat": 3,
+      "lvglDither": false
     }
   ],
   "colors": [],

@@ -1,7 +1,9 @@
 #include "ui_now_playing.h"
 #include "ui.h"
 #include "screens.h"
+#include "images.h"
 #include "display_manager.h"
+#include <misc/cache/instance/lv_image_cache.h>
 
 #include "audio/audio_player.h"
 
@@ -13,6 +15,9 @@ extern AudioPlayer player;
 static String lastTitle, lastArtist, lastAlbum;
 static uint32_t lastDuration = 0;
 static uint32_t lastCurrent = (uint32_t)-1;
+static std::shared_ptr<const std::vector<uint8_t>> displayedCover;
+static lv_image_dsc_t coverDescriptor{};
+static lv_obj_t *pauseOverlay = nullptr;
 
 // Accedes uniquement sous le verrou LVGL (callbacks et rafraichissement).
 static bool seekPending = false;
@@ -35,6 +40,17 @@ void initNowPlayingUI()
     // Un glissement du slider ne doit pas aussi declencher un swipe de piste.
     lv_obj_remove_flag(slider, LV_OBJ_FLAG_EVENT_BUBBLE);
     lv_obj_remove_flag(slider, LV_OBJ_FLAG_GESTURE_BUBBLE);
+
+    // La pochette reste en arriere-plan ; pause est une image independante.
+    lv_obj_set_style_bg_image_src(objects.track_image, nullptr, LV_PART_MAIN);
+    lv_image_set_src(objects.track_image, &img_music);
+    lv_image_set_inner_align(objects.track_image, LV_IMAGE_ALIGN_CENTER);
+
+    pauseOverlay = lv_image_create(objects.track_image);
+    lv_image_set_src(pauseOverlay, &img_pause);
+    lv_obj_center(pauseOverlay);
+    lv_obj_remove_flag(pauseOverlay, LV_OBJ_FLAG_CLICKABLE);
+    lv_obj_add_flag(pauseOverlay, LV_OBJ_FLAG_HIDDEN);
 }
 
 void handleSeekSliderEvent(lv_event_t *e)
@@ -69,6 +85,40 @@ void updateNowPlayingUI()
         return;
     // Lire apres le verrou : un callback a pu envoyer un seek pendant l'attente.
     const auto state = player.state();
+    if (state.coverJpeg != displayedCover)
+    {
+        // Le cache LVGL est indexe par l'adresse du descripteur. Le retirer
+        // avant de remplacer son buffer evite de reutiliser l'ancienne pochette.
+        if (lv_image_get_src(objects.track_image) == &coverDescriptor)
+        {
+            lv_image_set_src(objects.track_image, &img_music);
+            lv_image_cache_drop(&coverDescriptor);
+        }
+        displayedCover = state.coverJpeg;
+        if (displayedCover && !displayedCover->empty())
+        {
+            coverDescriptor.header.magic = LV_IMAGE_HEADER_MAGIC;
+            coverDescriptor.header.cf = LV_COLOR_FORMAT_RAW;
+            coverDescriptor.data_size = displayedCover->size();
+            coverDescriptor.data = displayedCover->data();
+            lv_image_set_src(objects.track_image, &coverDescriptor);
+            lv_image_set_inner_align(objects.track_image, LV_IMAGE_ALIGN_COVER);
+        }
+        else
+        {
+            lv_image_set_src(objects.track_image, &img_music);
+            lv_image_set_inner_align(objects.track_image, LV_IMAGE_ALIGN_CENTER);
+        }
+    }
+
+    if (pauseOverlay)
+    {
+        if (state.running || !state.hasTrack)
+            lv_obj_add_flag(pauseOverlay, LV_OBJ_FLAG_HIDDEN);
+        else
+            lv_obj_remove_flag(pauseOverlay, LV_OBJ_FLAG_HIDDEN);
+    }
+
     if (!state.hasTrack)
     {
         display_lvgl_unlock();

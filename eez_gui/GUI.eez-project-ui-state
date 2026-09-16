@@ -25,6 +25,7 @@
           },
           {
             "type": "border",
+            "selected": 2,
             "size": 240,
             "location": "right",
             "children": [
@@ -168,7 +169,8 @@
                       "enableClose": false,
                       "icon": "svg:hierarchy"
                     }
-                  ]
+                  ],
+                  "active": true
                 },
                 {
                   "type": "tabset",
@@ -230,8 +232,7 @@
                   },
                   "icon": "svg:page"
                 }
-              ],
-              "active": true
+              ]
             },
             {
               "type": "tabset",
@@ -1071,7 +1072,9 @@
       "selectionBack": {
         "0": {
           "0": {
-            "0": {}
+            "0": {
+              "$selected": true
+            }
           },
           "2": {},
           "3": {}
@@ -1140,5 +1143,5 @@
   "globalFlowZoom": true,
   "flowZoom": 1.25,
   "implementationLanguage": "C",
-  "openDialogDefaultPath": "C:\\Users\\polow\\Documents\\ESP32\\esp32-pio-lvgl-mp3\\eez_gui\\svg\\music.png"
+  "openDialogDefaultPath": "C:\\Users\\be07\\Documents\\PWA\\esp32-pio-lvgl-mp3\\eez_gui\\svg\\pause.png"
 }

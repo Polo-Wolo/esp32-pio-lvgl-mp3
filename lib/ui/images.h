@@ -11,6 +11,7 @@ extern const lv_img_dsc_t img_heart;
 extern const lv_img_dsc_t img_repeat;
 extern const lv_img_dsc_t img_shuffle;
 extern const lv_img_dsc_t img_music;
+extern const lv_img_dsc_t img_pause;
 
 #ifndef EXT_IMG_DESC_T
 #define EXT_IMG_DESC_T
@@ -20,7 +21,7 @@ typedef struct _ext_img_desc_t {
 } ext_img_desc_t;
 #endif
 
-extern const ext_img_desc_t images[4];
+extern const ext_img_desc_t images[5];
 
 #ifdef __cplusplus
 }

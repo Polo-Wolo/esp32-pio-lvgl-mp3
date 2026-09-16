@@ -154,6 +154,7 @@ void action_child_clicked(lv_event_t *e)
     switch (currentChild)
     {
     case UiChild::UiChildTrackImage:
+        action_play_pause_btn(nullptr);
         if (DEBUG_UI_EVENTS)
             Serial.println("[CHILD] TrackImage clicked");
         break;

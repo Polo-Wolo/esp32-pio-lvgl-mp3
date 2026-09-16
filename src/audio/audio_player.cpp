@@ -129,6 +129,8 @@ void AudioPlayer::playCurrentNow()
     if (!track || !track->isValid())
         return;
     ++_trackGeneration;
+    _currentPath = track->path;
+    _coverJpeg.reset();
     // La lib livre ses infos au DEBUT du prochain loop(). Vider les infos
     // encore en attente apres l'arret, sans appliquer les anciens tags/EOF
     // au nouveau morceau deja selectionne dans le Jukebox.
@@ -181,6 +183,7 @@ void AudioPlayer::publishState()
     next.trackGeneration = _trackGeneration;
     next.seekRequest = _seekRequest;
     next.seekAccepted = _seekAccepted;
+    next.coverJpeg = _coverJpeg;
     if (jukebox)
     {
         next.shuffle = jukebox->isShuffleEnabled();
@@ -204,11 +207,49 @@ void AudioPlayer::onInfo(Audio::msg_t m)
 {
     // Dans la version epinglee de la lib, get_info() livre les evenements
     // depuis audio.loop(). Le Jukebox reste donc dans la tache proprietaire.
-    if (_discardTrackEvents && (m.e == Audio::evt_eof || m.e == Audio::evt_id3data))
+    if (_discardTrackEvents &&
+        (m.e == Audio::evt_eof || m.e == Audio::evt_id3data || m.e == Audio::evt_image))
         return;
     if (m.e == Audio::evt_eof)
     {
         _trackEnded = true;
+        return;
+    }
+    if (m.e == Audio::evt_image && !_currentPath.isEmpty())
+    {
+        // La bibliotheque donne des couples position/taille pour les cadres APIC.
+        // Chercher la premiere image JPEG exploitable (PNG non active dans LVGL).
+        constexpr uint32_t MaxCoverBytes = 512 * 1024;
+        File file = SD_MMC.open(_currentPath, FILE_READ);
+        if (file)
+        {
+            for (size_t segment = 0; segment + 1 < m.vec1.size(); segment += 2)
+            {
+                const uint32_t position = m.vec1[segment];
+                const uint32_t size = m.vec1[segment + 1];
+                if (size < 4 || size > MaxCoverBytes || !file.seek(position))
+                    continue;
+
+                auto bytes = std::make_shared<std::vector<uint8_t>>(size);
+                if (file.read(bytes->data(), size) != size)
+                    continue;
+
+                size_t jpegStart = 0;
+                while (jpegStart + 1 < bytes->size() &&
+                       !(bytes->at(jpegStart) == 0xff && bytes->at(jpegStart + 1) == 0xd8))
+                    ++jpegStart;
+                if (jpegStart + 1 == bytes->size())
+                    continue;
+
+                if (jpegStart)
+                {
+                    memmove(bytes->data(), bytes->data() + jpegStart, bytes->size() - jpegStart);
+                    bytes->resize(bytes->size() - jpegStart);
+                }
+                _coverJpeg = bytes;
+                break;
+            }
+        }
         return;
     }
     if (!m.msg)
