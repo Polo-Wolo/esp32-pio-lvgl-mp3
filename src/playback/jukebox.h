@@ -15,10 +15,13 @@ public:
     String artist;
     String album;
     int trackNumber;
+    // Duree connue des le scan de la carte (exacte avec Xing/Info/VBRI ou
+    // estimee avec le debit de la premiere trame MP3).
+    uint32_t durationSeconds;
 
     // Constructeur par defaut : piste "vide" / invalide
     Music()
-        : path(""), title(""), artist(""), album(""), trackNumber(0)
+        : path(""), title(""), artist(""), album(""), trackNumber(0), durationSeconds(0)
     {
     }
 
@@ -26,8 +29,9 @@ public:
           const String &title,
           const String &artist,
           const String &album,
-          int trackNumber)
-        : path(path), title(title), artist(artist), album(album), trackNumber(trackNumber)
+          int trackNumber,
+          uint32_t durationSeconds = 0)
+        : path(path), title(title), artist(artist), album(album), trackNumber(trackNumber), durationSeconds(durationSeconds)
     {
     }
 

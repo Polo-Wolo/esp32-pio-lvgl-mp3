@@ -24,7 +24,7 @@ static lv_obj_t *pauseOverlay = nullptr;
 
 // Accedes uniquement sous le verrou LVGL (callbacks et rafraichissement).
 static bool seekPending = false;
-static uint32_t seekTarget = 0, seekStarted = 0, seekRequest = 0, seekTrack = 0;
+static uint32_t seekTarget = 0, seekRequest = 0, seekTrack = 0;
 
 static void showMusicPlaceholder()
 {
@@ -84,7 +84,6 @@ void handleSeekSliderEvent(lv_event_t *e)
     if (++seekRequest == 0) ++seekRequest;
     seekPending = player.seekTo(target, seekRequest);
     seekTarget = target;
-    seekStarted = millis();
     seekTrack = state.trackGeneration;
     if (!seekPending)
         Serial.println("[Seek] Commande refusee : file pleine ou player indisponible.");
@@ -123,7 +122,9 @@ void updateNowPlayingUI()
     uint32_t cur = state.currentTime;
     if (durationTrack != state.trackGeneration) {
         durationTrack = state.trackGeneration;
-        durationDisplay.reset(millis());
+        // La duree issue du scan MP3 est disponible avant le decodeur : elle
+        // active immediatement le slider. Les corrections restent filtrees.
+        durationDisplay.reset(millis(), state.duration);
         lastDuration = UINT32_MAX;
         lastDurationLabel = UINT32_MAX;
         seekPending = false;
@@ -142,8 +143,8 @@ void updateNowPlayingUI()
         // L'acceptation par la lib precede le repositionnement effectif.
         // Attendre aussi le temps reel ; ne jamais figer l'UI indefiniment.
         if (state.trackGeneration != seekTrack ||
-            (acknowledged && (!state.seekAccepted || arrived)) ||
-            millis() - seekStarted >= 2000)
+            (acknowledged && !state.seekAccepted) ||
+            (acknowledged && !state.seekPending && arrived))
             seekPending = false;
     }
     if (userIsDragging)

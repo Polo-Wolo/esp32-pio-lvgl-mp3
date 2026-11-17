@@ -4,7 +4,10 @@
 // Filtre d'affichage seulement : ne change jamais la duree du decodeur audio.
 class DurationDisplay {
 public:
-    void reset(uint32_t now) { value = candidate = 0; started = since = now; }
+    void reset(uint32_t now, uint32_t initial = 0) {
+        value = candidate = initial;
+        started = since = now;
+    }
     uint32_t update(uint32_t raw, uint32_t now) {
         if (!raw) { candidate = 0; since = now; return value; }
         const uint32_t difference = raw > candidate ? raw - candidate : candidate - raw;

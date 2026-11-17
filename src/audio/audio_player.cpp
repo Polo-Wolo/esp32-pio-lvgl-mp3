@@ -58,6 +58,23 @@ void AudioPlayer::loop()
     // Livrer les evenements de la piste precedente avant toute commande
     // qui pourrait changer le Jukebox (notamment les tags ID3 en attente).
     audio.loop();
+
+    // Un seek peut arriver pendant que le decodeur lit encore l'en-tete MP3.
+    // Le conserver et le retenter plutot que de le refuser immediatement.
+    if (_pendingSeek)
+    {
+        if (seekNow(_pendingSeekTarget))
+        {
+            _pendingSeek = false;
+            _seekAccepted = true;
+        }
+        else if (millis() - _pendingSeekStarted >= 10000)
+        {
+            _pendingSeek = false;
+            _seekAccepted = false;
+            Serial.println("[Seek] Decodeur indisponible apres 10 secondes.");
+        }
+    }
     // Le callback ne rappelle jamais connecttoFS() : get_info() detient
     // un mutex interne a la lib. EOF est traite apres le retour de loop().
     if (_trackEnded)
@@ -113,8 +130,11 @@ void AudioPlayer::execute(const Command &command)
         audio.setVolume((uint8_t)constrain((int64_t)audio.getVolume() + command.value, 0LL, 21LL));
         break;
     case CommandType::Seek:
-        _seekAccepted = seekNow((uint32_t)command.value);
+        _pendingSeek = true;
+        _pendingSeekTarget = (uint32_t)command.value;
+        _pendingSeekStarted = millis();
         _seekRequest = command.request;
+        _seekAccepted = true; // commande conservee, execution eventuellement differee
         break;
     case CommandType::Shuffle:
         if (jukebox) jukebox->toggleShuffle();
@@ -131,6 +151,7 @@ void AudioPlayer::playCurrentNow()
     if (!track || !track->isValid())
         return;
     ++_trackGeneration;
+    _pendingSeek = false;
     _currentPath = track->path;
     CoverWorker::reset(_trackGeneration);
     // La lib livre ses infos au DEBUT du prochain loop(). Vider les infos
@@ -185,6 +206,7 @@ void AudioPlayer::publishState()
     next.trackGeneration = _trackGeneration;
     next.seekRequest = _seekRequest;
     next.seekAccepted = _seekAccepted;
+    next.seekPending = _pendingSeek;
     next.cover = CoverWorker::result(_trackGeneration);
     if (jukebox)
     {
@@ -194,6 +216,8 @@ void AudioPlayer::publishState()
         if (track)
         {
             next.hasTrack = true;
+            if (!next.duration)
+                next.duration = track->durationSeconds;
             next.title = track->title;
             next.artist = track->artist;
             next.album = track->album;

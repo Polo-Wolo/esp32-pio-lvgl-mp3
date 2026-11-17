@@ -22,6 +22,7 @@ public:
         uint32_t trackGeneration = 0;
         uint32_t seekRequest = 0;
         bool seekAccepted = false;
+        bool seekPending = false;
         bool hasTrack = false;
         String title, artist, album;
         // Vignette terminee, partagee avec LVGL sans copie des pixels.
@@ -80,6 +81,9 @@ private:
     uint32_t _trackGeneration = 0;
     uint32_t _seekRequest = 0;
     bool _seekAccepted = false;
+    bool _pendingSeek = false;
+    uint32_t _pendingSeekTarget = 0;
+    uint32_t _pendingSeekStarted = 0;
     String _currentPath;
 
     bool enqueue(CommandType type, int64_t value = 0, uint32_t request = 0);
